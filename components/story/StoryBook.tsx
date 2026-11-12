@@ -14,24 +14,21 @@ function parse(s: string): Seg[] {
     .map((t) => (t.startsWith("**") ? { text: t.slice(2, -2), bold: true } : { text: t, bold: false }));
 }
 
+/** 이야기 한 권. 마지막 장을 넘기면 닫히고 대분류 선택 화면으로 돌아간다. */
 export default function StoryBook({
-  stories,
-  index,
-  onChangeStory,
+  story,
+  onFinish,
   onClose,
 }: {
-  stories: Story[];
-  index: number;
-  onChangeStory: (i: number) => void;
+  story: Story;
+  onFinish: () => void;
   onClose: () => void;
 }) {
-  const story = stories[index];
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState<"next" | "prev">("next");
   const p = story.pages[page];
   const isLast = page === story.pages.length - 1;
-  const hasNextStory = stories.length > 1;
-  const nextStory = stories[(index + 1) % stories.length];
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const bubbles = useMemo(() => p.bubbles.map(parse), [p]);
 
@@ -39,14 +36,13 @@ export default function StoryBook({
     const np = page + d;
     if (np < 0) return;
     if (np >= story.pages.length) {
-      if (!hasNextStory) return onClose();
-      setDir("next");
-      setPage(0);
-      onChangeStory((index + 1) % stories.length);
+      onFinish();
+      onClose();
       return;
     }
     setDir(d === 1 ? "next" : "prev");
     setPage(np);
+    scrollRef.current?.scrollTo({ top: 0 });
   };
 
   // 키보드
@@ -87,7 +83,7 @@ export default function StoryBook({
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {/* 그림 */}
           <div
             key={pageKey}
@@ -150,7 +146,7 @@ export default function StoryBook({
             ))}
           </div>
           <button onClick={() => go(1)} className="nav-btn nav-primary shrink-0 rounded-xl px-4 py-2 font-medium">
-            {!isLast ? "다음 ▶" : hasNextStory ? `${nextStory.icon} 다음 이야기` : "닫기"}
+            {!isLast ? "다음 ▶" : "✓ 다른 이야기 고르기"}
           </button>
         </footer>
       </div>

@@ -476,16 +476,16 @@ function WorkScene({ group }: { group: TenGodGroup }) {
       <Sky el="metal" id="work" />
       <Cloud y={36} delay={-3} />
       <Cloud y={70} delay={-10} scale={0.8} />
-      <path d="M40 240 L200 70 L360 240Z" fill="#7d8b9e" />
+      <Hills el="wood" />
+      <path d="M70 240 L200 70 L330 240Z" fill="#7d8b9e" />
       <path d="M170 102 L200 70 L230 102 Q215 94 200 103 Q185 94 170 102Z" fill="#fff" />
       <path d="M120 240 Q170 210 150 185 T205 150 T190 110" stroke="#e9dcc0" strokeWidth="9" fill="none" strokeLinecap="round" />
       <text x="200" y="66" textAnchor="middle" fontSize="38" className="anim-float">
         {WORK_PROP[group]}
       </text>
       <g className="anim-bob">
-        <Person x={152} y={196} color="#3767b0" s={0.75} />
+        <Person x={160} y={190} color="#3767b0" s={0.75} />
       </g>
-      <Hills el="wood" />
     </>
   );
 }
@@ -705,6 +705,159 @@ function BridgeScene() {
   );
 }
 
+/* ---------------- 연운 상세 장면 ---------------- */
+
+const MARK_STYLE: Record<string, { color: string; dash?: string; label: string }> = {
+  clash: { color: "#d4513f", dash: "7 5", label: "충" },
+  hap: { color: "#3f9a63", label: "합" },
+  wonjin: { color: "#8e5bb5", dash: "2 5", label: "원진" },
+  samhap: { color: "#3767b0", dash: "10 4", label: "삼합" },
+  same: { color: "#c99a2e", dash: "3 3", label: "같음" },
+};
+
+function PillarsScene({ guest, mine }: Extract<SceneSpec, { kind: "pillars" }>) {
+  const order = ["hour", "day", "month", "year"].map((k) => mine.find((m) => m.key === k)).filter(Boolean) as typeof mine;
+  const step = W / (order.length + 1);
+  const gc = ELEMENT_INFO[guest.el].color;
+  return (
+    <>
+      <Sky el={guest.el} night id="pillars" />
+      <Stars n={10} />
+      {order.map((p, i) => {
+        const x = step * (i + 1);
+        const st = p.mark ? MARK_STYLE[p.mark] : null;
+        return (
+          <g key={p.key}>
+            {st && (
+              <>
+                <path d={`M200 74 Q${(200 + x) / 2} 110 ${x} 182`} stroke={st.color} strokeWidth="3.5" fill="none" strokeDasharray={st.dash} className="anim-thread" />
+                <rect x={(200 + x) / 2 - 16} y={112} width="32" height="18" rx="9" fill={st.color} />
+                <text x={(200 + x) / 2} y={125} textAnchor="middle" fontSize="11" fontWeight={700} fill="#fff">
+                  {st.label}
+                </text>
+              </>
+            )}
+            {p.tie && <path d={`M200 74 Q${(200 + x) / 2} 90 ${x} 148`} stroke="#f2c14e" strokeWidth="3" fill="none" strokeDasharray="4 4" className="anim-thread" />}
+          </g>
+        );
+      })}
+      <g className="anim-float">
+        <circle cx="200" cy="48" r="30" fill={gc} stroke="#fff" strokeWidth="3" />
+        <Glyph x={200} y={58} text={guest.stem + guest.branch} size={24} />
+      </g>
+      {order.map((p, i) => {
+        const x = step * (i + 1);
+        const c = ELEMENT_INFO[p.el].color;
+        const st = p.mark ? MARK_STYLE[p.mark] : null;
+        return (
+          <g key={`col-${p.key}`}>
+            <text x={x} y={142} textAnchor="middle" fontSize="11" fill="#fff" opacity="0.85">
+              {p.label}
+            </text>
+            <rect x={x - 22} y={148} width="44" height="32" rx="6" fill="#fbf3e3" stroke={p.tie ? "#f2c14e" : "transparent"} strokeWidth="3" />
+            <Glyph x={x} y={172} text={p.stem} size={22} fill="#2b241b" />
+            <rect x={x - 22} y={184} width="44" height="36" rx="6" fill={c} stroke={st ? st.color : "transparent"} strokeWidth="4" />
+            <Glyph x={x} y={210} text={p.branch} size={24} />
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+function BalanceScene({ before, after, yong }: Extract<SceneSpec, { kind: "balance" }>) {
+  const els: Element[] = ["wood", "fire", "earth", "metal", "water"];
+  const max = Math.max(...els.map((e) => after[e]), 4);
+  const unit = 120 / max;
+  return (
+    <>
+      <Sky el="earth" id="balance" />
+      <rect x="40" y="208" width="320" height="6" rx="3" fill="#6b4b2a" />
+      {els.map((e, i) => {
+        const x = 68 + i * 66;
+        const c = ELEMENT_INFO[e].color;
+        const add = after[e] - before[e];
+        return (
+          <g key={e}>
+            <rect x={x - 18} y={208 - before[e] * unit} width="36" height={before[e] * unit} rx="4" fill={c} opacity="0.85" />
+            {add > 0 && (
+              <rect
+                x={x - 18}
+                y={208 - after[e] * unit}
+                width="36"
+                height={add * unit}
+                rx="4"
+                fill={c}
+                stroke="#fff"
+                strokeWidth="2.5"
+                strokeDasharray="5 3"
+                className="anim-pop"
+                style={{ transformOrigin: `${x}px ${208 - before[e] * unit}px`, animationDelay: `${0.3 + i * 0.1}s` }}
+              />
+            )}
+            <text x={x} y={200 - after[e] * unit} textAnchor="middle" fontSize="13" fontWeight={700} fill="#2b241b">
+              {after[e]}
+              {add > 0 ? ` (+${add})` : ""}
+            </text>
+            <Glyph x={x} y={236} text={ELEMENT_INFO[e].hanja} size={18} fill={dark(c, 0.2)} />
+            {e === yong && (
+              <text x={x} y={185 - after[e] * unit} textAnchor="middle" fontSize="15" className="anim-twinkle">
+                ⭐
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+function MonthsScene({ items, best }: Extract<SceneSpec, { kind: "months" }>) {
+  const step = W / (items.length + 1);
+  return (
+    <>
+      <Sky el="water" id="months" />
+      {[40, 60, 80].map((v) => (
+        <g key={v}>
+          <line x1="24" x2="376" y1={214 - v * 1.6} y2={214 - v * 1.6} stroke="#fff" strokeOpacity="0.5" strokeDasharray="3 4" />
+          <text x="22" y={218 - v * 1.6} fontSize="9" fill="#2b241b" opacity="0.6" textAnchor="end">
+            {v}
+          </text>
+        </g>
+      ))}
+      {items.map((m, i) => {
+        const x = step * (i + 1);
+        const h = m.score * 1.6;
+        return (
+          <g key={m.month}>
+            <rect
+              x={x - 17}
+              y={214 - h}
+              width="34"
+              height={h}
+              rx="6"
+              fill={KIND_FILL[m.kind]}
+              className="anim-grow"
+              style={{ transformOrigin: `${x}px 214px`, animationDelay: `${i * 0.08}s` }}
+            />
+            <text x={x} y={208 - h} textAnchor="middle" fontSize="14" fontWeight={700} fill="#2b241b">
+              {m.score}
+            </text>
+            {m.score === best && (
+              <text x={x} y={190 - h} textAnchor="middle" fontSize="14" className="anim-twinkle">
+                ⭐
+              </text>
+            )}
+            <text x={x} y={232} textAnchor="middle" fontSize="13" fontWeight={700} fill="#2b241b">
+              {m.month}월
+            </text>
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
 export default memo(SceneView);
 
 function SceneView({ scene, className }: { scene: SceneSpec; className?: string }) {
@@ -757,6 +910,15 @@ function SceneView({ scene, className }: { scene: SceneSpec; className?: string 
       break;
     case "bridge":
       body = <BridgeScene />;
+      break;
+    case "pillars":
+      body = <PillarsScene {...scene} />;
+      break;
+    case "balance":
+      body = <BalanceScene {...scene} />;
+      break;
+    case "months":
+      body = <MonthsScene {...scene} />;
       break;
   }
   return (

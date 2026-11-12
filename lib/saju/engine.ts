@@ -5,6 +5,7 @@ import {
   BRANCH_MAIN_STEM,
   CONTROLS,
   ELEMENTS,
+  ELEMENT_INFO,
   Element,
   GENERATES,
   JIE_KO,
@@ -17,6 +18,9 @@ import {
   generatorOf,
   isClash,
   isHap,
+  isSamhap,
+  isWonjin,
+  stemHap,
   tenGod,
 } from "./constants";
 
@@ -65,16 +69,114 @@ export interface Daeyun {
 
 export type FlowKind = "chance" | "prepare" | "careful";
 
+export interface ScorePoint {
+  label: string;
+  delta: number;
+}
+
 export interface PeriodFlow {
   stem: string;
   branch: string;
   god: TenGod;
   branchGod: TenGod;
   kind: FlowKind;
+  /** 0~100 (기본 60에서 근거별 가감) */
+  score: number;
+  /** 점수 근거: 항목별 가감 */
+  points: ScorePoint[];
   reasons: string[];
   basis: string;
   clashDay: boolean;
   hapDay: boolean;
+  wonjinDay: boolean;
+  stemHapDay: boolean;
+}
+
+/** 운(세운·월운) 점수 계산에 필요한 원국 정보 */
+export interface ScoreContext {
+  dayStem: string;
+  dayBranch: string;
+  yongshin: Element;
+  heeshin: Element;
+  gishin: Element;
+  elementCounts: Record<Element, number>;
+}
+
+export const kindOf = (score: number): FlowKind => (score >= 68 ? "chance" : score >= 52 ? "prepare" : "careful");
+
+/**
+ * 들어오는 간지 하나를 원국 기준으로 점수화한다.
+ * 기본 60 · 천간 오행(용신 +12 / 희신 +7 / 기신 −9 / 과다 −6) · 지지 오행(+10 / +6 / −8 / −6)
+ * · 일지와 합 +8, 삼합 +5, 충 −12, 원진 −6 · 일간과 천간합 +5
+ */
+export function scorePeriod(ctx: ScoreContext, stem: string, branch: string): PeriodFlow {
+  const points: ScorePoint[] = [];
+  const tags: string[] = [];
+  const excess = ELEMENTS.filter((e) => ctx.elementCounts[e] >= 3);
+  const elPoint = (e: Element, where: string, w: [number, number, number, number]) => {
+    const name = `${ELEMENT_INFO[e].ko}(${ELEMENT_INFO[e].hanja})`;
+    if (e === ctx.yongshin) {
+      points.push({ label: `${where} ${name} = 용신`, delta: w[0] });
+      tags.push("용신");
+    } else if (e === ctx.heeshin) {
+      points.push({ label: `${where} ${name} = 희신`, delta: w[1] });
+      tags.push("희신");
+    } else if (e === ctx.gishin) {
+      points.push({ label: `${where} ${name} = 기신`, delta: w[2] });
+      tags.push("기신");
+    } else if (excess.includes(e)) {
+      points.push({ label: `${where} ${name} = 이미 많은 오행`, delta: w[3] });
+      tags.push("과다 오행");
+    }
+  };
+  elPoint(STEM_EL[stem], "천간", [12, 7, -9, -6]);
+  elPoint(BRANCH_EL[branch], "지지", [10, 6, -8, -6]);
+
+  const hapDay = isHap(branch, ctx.dayBranch);
+  const clashDay = isClash(branch, ctx.dayBranch);
+  const wonjinDay = isWonjin(branch, ctx.dayBranch);
+  const samhapDay = isSamhap(branch, ctx.dayBranch);
+  const stemHapDay = stemHap(stem, ctx.dayStem) !== null;
+  const dk = BRANCH_KO[ctx.dayBranch];
+  const bk = BRANCH_KO[branch];
+  if (hapDay) {
+    points.push({ label: `${bk}·일지 ${dk} 육합`, delta: 8 });
+    tags.push("일지 합");
+  }
+  if (samhapDay) {
+    points.push({ label: `${bk}·일지 ${dk} 삼합`, delta: 5 });
+    tags.push("일지 삼합");
+  }
+  if (clashDay) {
+    points.push({ label: `${bk}·일지 ${dk} 충`, delta: -12 });
+    tags.push("일지 충");
+  }
+  if (wonjinDay) {
+    points.push({ label: `${bk}·일지 ${dk} 원진`, delta: -6 });
+    tags.push("일지 원진");
+  }
+  if (stemHapDay) {
+    points.push({ label: `${STEM_KO[stem]}·일간 ${STEM_KO[ctx.dayStem]} 천간합`, delta: 5 });
+    tags.push("천간합");
+  }
+
+  const score = Math.max(20, Math.min(98, 60 + points.reduce((s, p) => s + p.delta, 0)));
+  const uniq = [...new Set(tags)];
+  return {
+    stem,
+    branch,
+    god: tenGod(ctx.dayStem, stem),
+    branchGod: tenGod(ctx.dayStem, BRANCH_MAIN_STEM[branch]),
+    kind: kindOf(score),
+    score,
+    points,
+    reasons: uniq,
+    basis: uniq.length ? uniq.join("·") : "중립",
+    clashDay,
+    hapDay,
+    wonjinDay,
+    stemHapDay,
+  };
 }
 
 export interface YearFlow extends PeriodFlow {
@@ -331,44 +433,9 @@ export function analyze(input: BirthInput, now = new Date()): Analysis {
   const thisYear = now.getFullYear();
   const currentDaeyun = [...daeyun].reverse().find((d) => d.startYear <= thisYear) ?? null;
 
-  // 세운·월운 판단: 들어오는 간지의 오행이 용신/희신이면 +, 기신/과다 오행이면 −, 일지 충이면 −
-  const excess = ELEMENTS.filter((e) => elementCounts[e] >= 3);
-  const judge = (stem: string, branch: string): PeriodFlow => {
-    let score = 0;
-    const reasons: string[] = [];
-    for (const e of [STEM_EL[stem], BRANCH_EL[branch]]) {
-      if (e === yongshin) {
-        score += 1;
-        reasons.push("용신");
-      } else if (e === heeshin) {
-        score += 1;
-        reasons.push("희신");
-      } else if (e === gishin) {
-        score -= 1;
-        reasons.push("기신");
-      } else if (excess.includes(e)) {
-        score -= 1;
-        reasons.push("과다 오행");
-      }
-    }
-    const clashDay = isClash(branch, day.branch);
-    if (clashDay) {
-      score -= 1;
-      reasons.push("일지 충");
-    }
-    const uniq = [...new Set(reasons)];
-    return {
-      stem,
-      branch,
-      god: tenGod(dayStem, stem),
-      branchGod: tenGod(dayStem, BRANCH_MAIN_STEM[branch]),
-      kind: score >= 1 ? "chance" : score === 0 ? "prepare" : "careful",
-      reasons: uniq,
-      basis: uniq.length ? uniq.join("·") : "중립",
-      clashDay,
-      hapDay: isHap(branch, day.branch),
-    };
-  };
+  // 세운·월운 판단 (scorePeriod 참고)
+  const ctx: ScoreContext = { dayStem, dayBranch: day.branch, yongshin, heeshin, gishin, elementCounts };
+  const judge = (stem: string, branch: string): PeriodFlow => scorePeriod(ctx, stem, branch);
 
   // 향후 10년 세운
   const flows: YearFlow[] = [];

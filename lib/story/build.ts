@@ -44,6 +44,8 @@ import {
   wa,
 } from "./text";
 import type { Scene, Story } from "./types";
+import { yearDetail } from "../saju/period";
+import { GOD_AREA, buildYearStory, fmtPoints, scoreWord } from "./yearly";
 
 const gzKo = (stem: string, branch: string) => STEM_KO[stem] + BRANCH_KO[branch];
 
@@ -75,78 +77,9 @@ export function buildStories(a: Analysis, now = new Date()): Story[] {
   const f0 = a.flows[0];
   const isMale = a.input.gender === "male";
 
-  /* ================= 올해 운 ================= */
-  const yAnimal = BRANCH_ANIMAL[f0.branch];
-  const yStemEl = STEM_EL[f0.stem];
-  const yBranchEl = BRANCH_EL[f0.branch];
-  const nextChance = a.flows.slice(1).find((f) => f.kind === "chance");
-  const year: Story = {
-    id: "year",
-    title: "올해 운",
-    icon: "🌅",
-    tagline: `${f0.year}년 ${gzKo(f0.stem, f0.branch)}년`,
-    pages: [
-      {
-        title: `${f0.year}년, ${EL_COLOR_WORD[yStemEl]} ${yAnimal.ko}의 해`,
-        scene: { kind: "year", el: yStemEl, emoji: yAnimal.emoji, ganzhi: f0.stem + f0.branch },
-        bubbles: [
-          `올해 ${f0.year}년은 **${gzKo(f0.stem, f0.branch)}년(${f0.stem}${f0.branch})**이에요. 그래서 ${EL_COLOR_WORD[yStemEl]} ${yAnimal.ko}의 해라고 불러요.`,
-          yStemEl === yBranchEl
-            ? `하늘(천간)과 땅(지지)에 모두 **${elName(yStemEl)}** 기운이 흐르는 해예요. ${EL_MEANING[yStemEl]}이 아주 뚜렷하게 드러나지요.`
-            : `하늘(천간)에는 **${elName(yStemEl)}**, 땅(지지)에는 **${elName(yBranchEl)}** 기운이 흐르는 해예요.`,
-          `이 기운이 ${me}인 당신을 만나면 어떤 이야기가 펼쳐질까요? 함께 한 장씩 넘겨봐요.`,
-        ],
-      },
-      {
-        title: "올해 당신을 찾아온 손님",
-        scene: { kind: "guest", el: yStemEl, glyph: TEN_GOD_HANJA[f0.god] },
-        bubbles: [
-          `명리학에서는 그해의 기운을 **나(일간 ${STEM_KO[a.dayStem]})와의 관계**로 읽어요. 같은 해라도 사람마다 다른 손님이 찾아오는 셈이죠.`,
-          `올해 당신을 찾아온 손님은 **${ieyo(`${f0.god}**(${TEN_GOD_HANJA[f0.god]})`)}. ${GOD_PLAIN[f0.god]}.`,
-          f0.branchGod !== f0.god
-            ? `땅에서는 **${f0.branchGod}** 기운도 함께 올라와요. 한마디로 올해의 열쇳말은 「${wa(`${YEAR_GOD_KEYWORD[f0.god]}」`)} 「${ieyo(`${YEAR_GOD_KEYWORD[f0.branchGod]}」`)}.`
-            : `하늘과 땅이 같은 손님이라 그 성격이 아주 진해요. 올해의 열쇳말은 「${ieyo(`${YEAR_GOD_KEYWORD[f0.god]}」`)}.`,
-        ],
-        badges: [`세운 천간 ${f0.god}`, `세운 지지 ${f0.branchGod}`],
-      },
-      {
-        title: KIND_TEXT[f0.kind].name,
-        scene: { kind: "path", mood: f0.kind },
-        bubbles: [
-          KIND_TEXT[f0.kind].desc,
-          reasonSentence(f0),
-          ...(f0.hapDay ? ["게다가 올해의 지지가 내 자리(일지)와 **합(合)**을 이뤄요. 사람과의 인연이 부드럽게 맺어지기 쉬운 해예요."] : []),
-          ...(a.currentDaeyun
-            ? [`지금 당신은 ${a.currentDaeyun.startAge}세부터 이어지는 **${gzKo(a.currentDaeyun.stem, a.currentDaeyun.branch)} 대운** 속에 있어요. 대운은 10년마다 바뀌는 인생의 큰 계절이고, 올해 운은 그 계절 위에 부는 바람이라고 생각하면 돼요.`]
-            : []),
-        ],
-        badges: [`용신 ${elName(a.yongshin)}`, `희신 ${elName(a.heeshin)}`, `기신 ${elName(a.gishin)}`],
-      },
-      {
-        title: "올해를 이렇게 보내세요",
-        scene: { kind: "lantern", el: a.yongshin },
-        bubbles: [
-          `✔ **해 보면 좋은 것** — ${GOD_DO[f0.god]}.`,
-          `✔ **조심할 것** — ${GOD_CAUTION[f0.god]}.`,
-          `행운을 부르는 열쇠는 당신에게 필요한 **${elName(a.yongshin)}** 기운이에요. ${kaeun.color} 소품, ${kaeun.direction} 방향, 그리고 「${eul(`${kaeun.habit}」`)} 곁에 두세요.`,
-        ],
-      },
-      {
-        title: "다음 몇 해의 풍경",
-        scene: stones(a.flows.slice(0, 5), nextChance ? [nextChance.year] : []),
-        bubbles: [
-          "앞으로 다섯 해의 흐름을 징검다리로 놓아 봤어요. 초록 돌은 순풍, 노란 돌은 다지기, 회색 돌은 쉬어가는 해예요.",
-          a.flows
-            .slice(1, 5)
-            .map((f) => `${f.year}년 ${gzKo(f.stem, f.branch)} — ${KIND_TEXT[f.kind].short}`)
-            .join("\n"),
-          nextChance
-            ? `특히 **${nextChance.year}년**은 순풍이 부는 해예요. 큰 계획이 있다면 그해를 향해 차근차근 준비해 보세요.`
-            : "앞으로 몇 해는 다지는 흐름이 이어져요. 서두르지 않고 기반을 쌓는 사람이 결국 멀리 가요.",
-        ],
-      },
-    ],
-  };
+  /* ================= 올해 운 · 내년 운 (자세한 버전) ================= */
+  const year = buildYearStory(a, yearDetail(a, f0.year), "this");
+  const nextYear = buildYearStory(a, yearDetail(a, f0.year + 1), "next");
 
   /* ================= 이번 달 운 ================= */
   const m = a.thisMonth;
@@ -170,7 +103,8 @@ export function buildStories(a: Analysis, now = new Date()): Story[] {
         scene: { kind: "guest", el: mStemEl, glyph: TEN_GOD_HANJA[m.god] },
         bubbles: [
           `당신에게 이번 달은 **${m.god}(${TEN_GOD_HANJA[m.god]})**의 달이에요. ${GOD_PLAIN[m.god]}.`,
-          `흐름으로 보면 **${KIND_TEXT[m.kind].name}**예요. ${reasonSentence(m)}`,
+          `예를 들어 이번 달에는 ${GOD_AREA[m.god].examples[0]}, ${GOD_AREA[m.god].examples[1]} 같은 일이 생기기 쉬워요.`,
+          `이번 달 점수는 **${m.score}점(${scoreWord(m.score)})**, 흐름으로 보면 **${KIND_TEXT[m.kind].name}**예요. ${reasonSentence(m)}\n근거: 기본 60 → ${fmtPoints(m.points)}`,
           m.clashDay
             ? "이번 달은 내 자리와 부딪히는 **충**이 있어서 이사·이직·여행 같은 변화가 생기기 쉬워요. 중요한 약속은 여유 있게 잡으세요."
             : m.hapDay
@@ -182,7 +116,7 @@ export function buildStories(a: Analysis, now = new Date()): Story[] {
         title: "이번 달은 이렇게",
         scene: { kind: "path", mood: m.kind },
         bubbles: [
-          `✔ **해 보면 좋은 것** — ${GOD_DO[m.god]}.`,
+          `✔ **해 보면 좋은 것** — ${GOD_DO[m.god]}. ${GOD_AREA[m.god].monthAction}`,
           `✔ **조심할 것** — ${GOD_CAUTION[m.god]}.`,
           `이번 달 행운 포인트 — 색은 **${kaeun.color}**, 숫자는 **${kaeun.number}**. 작은 것부터 곁에 두어 보세요.`,
         ],
@@ -460,7 +394,7 @@ export function buildStories(a: Analysis, now = new Date()): Story[] {
     ],
   };
 
-  return [year, month, money, love, marriage, children, workStory];
+  return [year, nextYear, month, money, love, marriage, children, workStory];
 }
 
 /** 표지 장면 */

@@ -18,7 +18,14 @@ export type Scene =
   | { kind: "duo"; elA: Element; elB: Element; emojiA: string; emojiB: string; heat: number }
   | { kind: "stems"; a: string; b: string; elA: Element; elB: Element; mode: "hap" | "same" | "gen-ab" | "gen-ba" | "ctrl-ab" | "ctrl-ba" }
   | { kind: "exchange"; elA: Element; elB: Element }
-  | { kind: "bridge" };
+  | { kind: "bridge" }
+  | {
+      kind: "pillars";
+      guest: { stem: string; branch: string; el: Element };
+      mine: { key: string; label: string; stem: string; branch: string; el: Element; mark?: "clash" | "hap" | "wonjin" | "samhap" | "same"; tie?: boolean }[];
+    }
+  | { kind: "balance"; before: Record<Element, number>; after: Record<Element, number>; yong: Element }
+  | { kind: "months"; items: { month: number; score: number; kind: FlowKind }[]; best: number };
 
 export interface StoryPage {
   title: string;
@@ -30,7 +37,7 @@ export interface StoryPage {
 }
 
 export interface Story {
-  id: "couple" | "year" | "month" | "money" | "love" | "marriage" | "children" | "work";
+  id: "couple" | "year" | "nextYear" | "month" | "money" | "love" | "marriage" | "children" | "work";
   title: string;
   icon: string;
   tagline: string;

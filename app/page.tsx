@@ -27,7 +27,8 @@ export default function Home() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [who, setWho] = useState<"me" | "partner">("me");
-  const [book, setBook] = useState<{ stories: Story[]; index: number } | null>(null);
+  const [book, setBook] = useState<{ story: Story; key: string } | null>(null);
+  const [read, setRead] = useState<Set<string>>(new Set());
   const [drawId, setDrawId] = useState(0);
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +51,7 @@ export default function Home() {
       const partner: Person | null = r.partner ? { label: r.partner.name || "상대", a: analyze(r.partner.birth) } : null;
       setResult({ me, partner });
       setWho("me");
+      setRead(new Set());
       setError(null);
       setDrawId((n) => n + 1);
       requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -60,11 +62,9 @@ export default function Home() {
   };
 
   const personal = view && (who === "partner" && view.partnerStories ? view.partnerStories : view.meStories);
-  const openPersonal = (i: number) => {
-    if (!view || !personal) return;
-    // 커플 모드에서는 궁합 이야기 뒤에 각자의 이야기가 이어진다
-    setBook(view.couple ? { stories: [view.couple, ...personal], index: i + 1 } : { stories: personal, index: i });
-  };
+  const openPersonal = (s: Story) => setBook({ story: s, key: `${who}:${s.id}` });
+  const openCouple = () => view?.couple && setBook({ story: view.couple, key: "couple" });
+  const readOfWho = new Set([...read].filter((k) => k.startsWith(`${who}:`)).map((k) => k.slice(who.length + 1)));
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
@@ -84,7 +84,7 @@ export default function Home() {
           {/* 표지 */}
           {view.couple && view.compat && result.partner ? (
             <section className="cover overflow-hidden rounded-3xl">
-              <button className="block w-full text-left" onClick={() => setBook({ stories: [view.couple!, ...view.meStories], index: 0 })}>
+              <button className="block w-full text-left" onClick={openCouple}>
                 <Scene scene={view.couple.pages[0].scene} />
               </button>
               <div className="flex items-end gap-3 px-4 pb-4 pt-3 sm:px-6">
@@ -96,11 +96,8 @@ export default function Home() {
                   <p className="mt-1 text-[15px] leading-relaxed">
                     {coupleHeadline(view.compat.score)} 두 사람이 어떻게 만나고, 어디서 부딪히고, 어떻게 함께 걸어가면 좋을지 그림책으로 준비했어요.
                   </p>
-                  <button
-                    onClick={() => setBook({ stories: [view.couple!, ...view.meStories], index: 0 })}
-                    className="draw-btn font-serif-kr mt-3 w-full rounded-xl py-2.5 text-base font-bold"
-                  >
-                    💞 우리 둘의 궁합 펼치기
+                  <button onClick={openCouple} className="draw-btn font-serif-kr mt-3 w-full rounded-xl py-2.5 text-base font-bold">
+                    {read.has("couple") ? "✓ 우리 둘의 궁합 다시 보기" : "💞 우리 둘의 궁합 펼치기"}
                   </button>
                 </div>
               </div>
@@ -146,7 +143,7 @@ export default function Home() {
                 </div>
               )}
             </div>
-            {personal && <CategoryGrid key={who} stories={personal} onOpen={openPersonal} />}
+            {personal && <CategoryGrid key={who} stories={personal} read={readOfWho} onOpen={openPersonal} />}
           </section>
 
           <details className="grid gap-3">
@@ -167,9 +164,9 @@ export default function Home() {
 
       {book && (
         <StoryBook
-          stories={book.stories}
-          index={book.index}
-          onChangeStory={(i) => setBook((b) => (b ? { ...b, index: i } : b))}
+          key={book.key}
+          story={book.story}
+          onFinish={() => setRead((r) => new Set(r).add(book.key))}
           onClose={() => setBook(null)}
         />
       )}
