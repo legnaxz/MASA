@@ -3,14 +3,14 @@ import type { Analysis } from "@/lib/saju/engine";
 import { SHINSAL_DECK } from "@/lib/deck";
 
 /** 사주 원국 표 (시·일·월·연 순서) + 오행 분포 + 신살 배지 */
-export default function PillarTable({ a }: { a: Analysis }) {
+export default function PillarTable({ a, title = "사주 원국" }: { a: Analysis; title?: string }) {
   const order = ["hour", "day", "month", "year"] as const;
   const max = Math.max(...ELEMENTS.map((e) => a.elementCounts[e]), 1);
 
   return (
     <section className="panel rounded-2xl p-4 sm:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-serif-kr text-lg font-bold">사주 원국</h2>
+        <h2 className="font-serif-kr text-lg font-bold">{title}</h2>
         <p className="text-xs text-[var(--muted)]">
           양력 {a.solarText} · {a.lunarText}
           {a.input.solarTimeCorrection && a.hourKnown ? " · 30분 보정" : ""}

@@ -7,6 +7,7 @@ import {
   ELEMENTS,
   Element,
   GENERATES,
+  JIE_KO,
   STEM_EL,
   STEM_KO,
   TEN_GOD_GROUP,
@@ -15,6 +16,7 @@ import {
   controllerOf,
   generatorOf,
   isClash,
+  isHap,
   tenGod,
 } from "./constants";
 
@@ -63,13 +65,27 @@ export interface Daeyun {
 
 export type FlowKind = "chance" | "prepare" | "careful";
 
-export interface YearFlow {
-  year: number;
+export interface PeriodFlow {
   stem: string;
   branch: string;
   god: TenGod;
+  branchGod: TenGod;
   kind: FlowKind;
+  reasons: string[];
   basis: string;
+  clashDay: boolean;
+  hapDay: boolean;
+}
+
+export interface YearFlow extends PeriodFlow {
+  year: number;
+}
+
+export interface MonthFlow extends PeriodFlow {
+  startTerm: string;
+  startDate: string;
+  endTerm: string;
+  endDate: string;
 }
 
 export interface Analysis {
@@ -96,6 +112,7 @@ export interface Analysis {
   daeyun: Daeyun[];
   currentDaeyun: Daeyun | null;
   flows: YearFlow[];
+  thisMonth: MonthFlow;
 }
 
 const LABELS: Record<PillarKey, string> = {
@@ -314,13 +331,9 @@ export function analyze(input: BirthInput, now = new Date()): Analysis {
   const thisYear = now.getFullYear();
   const currentDaeyun = [...daeyun].reverse().find((d) => d.startYear <= thisYear) ?? null;
 
-  // 향후 10년 세운
+  // 세운·월운 판단: 들어오는 간지의 오행이 용신/희신이면 +, 기신/과다 오행이면 −, 일지 충이면 −
   const excess = ELEMENTS.filter((e) => elementCounts[e] >= 3);
-  const flows: YearFlow[] = [];
-  for (let y = thisYear; y < thisYear + 10; y++) {
-    const gz: string = Lunar.fromYmd(y, 6, 1).getYearInGanZhi();
-    const stem = gz[0];
-    const branch = gz[1];
+  const judge = (stem: string, branch: string): PeriodFlow => {
     let score = 0;
     const reasons: string[] = [];
     for (const e of [STEM_EL[stem], BRANCH_EL[branch]]) {
@@ -338,20 +351,48 @@ export function analyze(input: BirthInput, now = new Date()): Analysis {
         reasons.push("과다 오행");
       }
     }
-    if (isClash(branch, day.branch)) {
+    const clashDay = isClash(branch, day.branch);
+    if (clashDay) {
       score -= 1;
       reasons.push("일지 충");
     }
-    const kind: FlowKind = score >= 1 ? "chance" : score === 0 ? "prepare" : "careful";
-    flows.push({
-      year: y,
+    const uniq = [...new Set(reasons)];
+    return {
       stem,
       branch,
       god: tenGod(dayStem, stem),
-      kind,
-      basis: reasons.length ? [...new Set(reasons)].join("·") : "중립",
-    });
+      branchGod: tenGod(dayStem, BRANCH_MAIN_STEM[branch]),
+      kind: score >= 1 ? "chance" : score === 0 ? "prepare" : "careful",
+      reasons: uniq,
+      basis: uniq.length ? uniq.join("·") : "중립",
+      clashDay,
+      hapDay: isHap(branch, day.branch),
+    };
+  };
+
+  // 향후 10년 세운
+  const flows: YearFlow[] = [];
+  for (let y = thisYear; y < thisYear + 10; y++) {
+    const gz: string = Lunar.fromYmd(y, 6, 1).getYearInGanZhi();
+    flows.push({ year: y, ...judge(gz[0], gz[1]) });
   }
+
+  // 이번 달 월운 (절기 기준)
+  const nowLunar = Solar.fromYmd(now.getFullYear(), now.getMonth() + 1, now.getDate()).getLunar();
+  const mgz: string = nowLunar.getMonthInGanZhiExact();
+  const prevJie = nowLunar.getPrevJie(true);
+  const nextJie = nowLunar.getNextJie(true);
+  const md = (s: string) => {
+    const [, mm, dd] = s.split("-").map(Number);
+    return `${mm}월 ${dd}일`;
+  };
+  const thisMonth: MonthFlow = {
+    ...judge(mgz[0], mgz[1]),
+    startTerm: JIE_KO[prevJie.getName()] ?? prevJie.getName(),
+    startDate: md(prevJie.getSolar().toYmd()),
+    endTerm: JIE_KO[nextJie.getName()] ?? nextJie.getName(),
+    endDate: md(nextJie.getSolar().toYmd()),
+  };
 
   return {
     input,
@@ -377,5 +418,6 @@ export function analyze(input: BirthInput, now = new Date()): Analysis {
     daeyun,
     currentDaeyun,
     flows,
+    thisMonth,
   };
 }

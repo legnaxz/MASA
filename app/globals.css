@@ -6,6 +6,7 @@
   --muted: #7b6f5f;
   --card: #fffaf1;
   --line: #e3d7c1;
+  --accent: #a8432f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -15,13 +16,13 @@
     --muted: #a39682;
     --card: #211c16;
     --line: #3b3228;
+    --accent: #f0a27a;
   }
 }
 
 body {
   min-height: 100vh;
   background-color: var(--bg);
-  /* 한지 결 */
   background-image: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--card) 80%, transparent), transparent 60%);
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -36,53 +37,6 @@ body {
 
 .panel {
   background: var(--card);
-  border: 1px solid var(--line);
-}
-
-.saju-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-top: 4px solid var(--el, var(--ink));
-  box-shadow: 0 10px 30px -18px rgb(60 40 10 / 0.45);
-  animation: card-flip 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  transform-origin: 50% 100%;
-}
-
-@keyframes card-flip {
-  from {
-    opacity: 0;
-    transform: perspective(900px) rotateY(-70deg) translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .saju-card {
-    animation: none;
-  }
-}
-
-.keyword-chip {
-  color: var(--el-deep);
-  background: color-mix(in srgb, var(--el) 16%, transparent);
-}
-
-@media (prefers-color-scheme: dark) {
-  .keyword-chip {
-    color: color-mix(in srgb, var(--el) 70%, white);
-  }
-}
-
-.basis-tag {
-  color: var(--muted);
-  background: color-mix(in srgb, var(--line) 55%, transparent);
-}
-
-.mini-card {
-  background: var(--bg);
   border: 1px solid var(--line);
 }
 
@@ -101,4 +55,142 @@ body {
 }
 .draw-btn:hover {
   opacity: 0.9;
+}
+
+/* ---------- 그림책 ---------- */
+.cover,
+.book,
+.tile {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px -24px rgb(60 40 10 / 0.55);
+}
+
+.tile {
+  animation: tile-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  transition: transform 0.2s;
+}
+.tile:hover {
+  transform: translateY(-3px);
+}
+
+.bubble {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 22px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+
+.nav-btn {
+  border: 1px solid var(--line);
+}
+.nav-primary {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.bubble-in {
+  animation: bubble-in 0.45s ease-out both;
+}
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-turn-next {
+  animation: turn-next 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  transform-origin: 0% 50%;
+}
+.page-turn-prev {
+  animation: turn-prev 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  transform-origin: 100% 50%;
+}
+
+/* ---------- 장면 애니메이션 ---------- */
+/* fill-box 는 SVG transform 속성의 기준점까지 바꾸므로, 가운데 기준이 필요한 애니메이션에만 쓴다 */
+.anim-float { animation: float 4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.anim-bob { animation: bob 1.6s ease-in-out infinite; }
+.anim-drift { animation: drift 26s linear infinite; }
+.anim-twinkle { animation: twinkle 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.anim-glow { animation: glow 3s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.anim-sway { animation: sway 5s ease-in-out infinite; transform-box: view-box; }
+.anim-run { animation: run 11s linear infinite; }
+.anim-rain { animation: rain 0.9s linear infinite; }
+.anim-grow { animation: grow 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-box: view-box; }
+.anim-bloom { animation: bloom 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-box: view-box; }
+.anim-pop { animation: pop 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.3) both; transform-box: view-box; }
+.anim-rise { animation: rise 3.6s ease-in infinite; }
+.anim-petal { animation: petal 6s linear infinite; }
+.anim-coin-fall { animation: coin-fall 3.3s ease-in infinite; }
+.anim-coin-drop { animation: coin-drop 2.7s ease-in infinite; }
+.anim-coin-leak { animation: coin-leak 3.6s ease-in infinite; }
+.anim-wave { animation: wave 3s ease-in-out infinite; }
+.anim-thread { animation: thread 1.5s linear infinite; }
+.anim-firefly { animation: firefly 4s ease-in-out infinite; }
+.anim-butterfly { animation: butterfly 7s ease-in-out infinite; }
+.anim-hop { animation: hop 1.2s ease-in-out infinite; transform-box: view-box; }
+.anim-blink { animation: blink 4.5s infinite; transform-box: view-box; transform: scaleY(0); }
+.anim-wave-wing { animation: wing 0.5s ease-in-out infinite alternate; transform-box: view-box; }
+
+@keyframes float { 50% { transform: translateY(-7px); } }
+@keyframes bob { 50% { transform: translateY(-3px); } }
+@keyframes drift { from { transform: translateX(-90px); } to { transform: translateX(470px); } }
+@keyframes twinkle { 50% { opacity: 0.25; transform: scale(0.8); } }
+@keyframes glow { 50% { opacity: 0.7; transform: scale(1.06); } }
+@keyframes sway { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+@keyframes run { from { transform: translateX(-70px); } to { transform: translateX(440px); } }
+@keyframes rain { from { transform: translateY(0); opacity: 0.9; } to { transform: translateY(150px); opacity: 0.2; } }
+@keyframes grow { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+@keyframes bloom { from { transform: scale(0.1) rotate(-90deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-90px); opacity: 0; } }
+@keyframes petal { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(-60px, 130px) rotate(260deg); opacity: 0; } }
+@keyframes coin-fall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 80% { transform: translateY(72px); opacity: 1; } 100% { transform: translateY(72px); opacity: 0; } }
+@keyframes coin-drop { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 75% { transform: translateY(105px); opacity: 1; } 100% { transform: translateY(110px); opacity: 0; } }
+@keyframes coin-leak { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(28px, 24px); opacity: 0; } }
+@keyframes wave { 50% { transform: translateX(-12px); } }
+@keyframes thread { to { stroke-dashoffset: -22; } }
+@keyframes firefly { 0%, 100% { transform: translate(0, 0); opacity: 0.2; } 50% { transform: translate(10px, -14px); opacity: 1; } }
+@keyframes butterfly { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(30px, -20px); } 50% { transform: translate(60px, 0); } 75% { transform: translate(30px, 15px); } }
+@keyframes hop { 50% { transform: translateY(-14px); } }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(0); } 95% { transform: scaleY(1); } }
+@keyframes wing { to { transform: rotate(-14deg); } }
+.anim-pass-right { animation: pass-right 2.7s ease-in-out infinite; }
+.anim-pass-left { animation: pass-left 2.7s ease-in-out infinite; }
+.anim-walk-right { animation: walk-right 3s ease-out both; }
+.anim-walk-left { animation: walk-left 3s ease-out both; }
+@keyframes pass-right { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 50% { transform: translate(100px, -26px); } 85% { opacity: 1; } 100% { transform: translate(200px, 0); opacity: 0; } }
+@keyframes pass-left { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 50% { transform: translate(-100px, -26px); } 85% { opacity: 1; } 100% { transform: translate(-200px, 0); opacity: 0; } }
+@keyframes walk-right { from { transform: translateX(-40px); } to { transform: translateX(60px); } }
+@keyframes walk-left { from { transform: translateX(40px); } to { transform: translateX(-60px); } }
+@keyframes turn-next { from { opacity: 0; transform: perspective(1200px) rotateY(28deg) translateX(30px); } to { opacity: 1; transform: none; } }
+@keyframes turn-prev { from { opacity: 0; transform: perspective(1200px) rotateY(-28deg) translateX(-30px); } to { opacity: 1; transform: none; } }
+@keyframes tile-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene *,
+  .tile,
+  .page-turn-next,
+  .page-turn-prev,
+  .anim-bob {
+    animation: none !important;
+  }
 }
