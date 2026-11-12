@@ -92,6 +92,16 @@ body {
   transform: rotate(45deg);
 }
 
+.toc-chip {
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--bg);
+}
+.toc-chip:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 .nav-btn {
   border: 1px solid var(--line);
 }

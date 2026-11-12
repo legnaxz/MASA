@@ -67,6 +67,7 @@ import {
   spotText,
   starInfo,
 } from "./detail";
+import { byId, enrichPersonal } from "./enrich";
 
 const gzKo = (stem: string, branch: string) => STEM_KO[stem] + BRANCH_KO[branch];
 
@@ -630,7 +631,9 @@ export function buildStories(a: Analysis): Story[] {
     ],
   };
 
-  return [nextYear, year, month, money, love, workStory, marriage, children];
+  const list = [nextYear, year, month, money, love, workStory, marriage, children];
+  enrichPersonal(a, byId(list), { yearGod: d0.god, nextYearGod: d1.god, monthGod: m.god, moneyType: mt, childCount: cn });
+  return list;
 }
 
 /** 표지 장면 */

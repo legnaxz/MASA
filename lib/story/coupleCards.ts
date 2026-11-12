@@ -9,6 +9,7 @@ import { yearDetail, type Area, type YearDetail } from "../saju/period";
 import { KAEUN_DECK, WORK_DECK } from "../deck";
 import { moneyType } from "./build";
 import { GROUP_PERSON } from "./detail";
+import { byId, enrichCouple } from "./enrich";
 import { CHILD_STYLE, LOVE_PATTERN, MONEY_STORY, PARENT_TIP, YEAR_MONEY, elName, eul, eun, iga, ieyo, wa } from "./text";
 import { GOD_AREA, INTERACTION_EX, INTERACTION_NAME, scoreWord } from "./yearly";
 import type { Scene, Story, StoryPage } from "./types";
@@ -725,5 +726,12 @@ export function buildCoupleCards(c: Compat, nameA: string, nameB: string): Story
     ],
   };
 
-  return [yearCard(1), yearCard(0), monthCard, moneyCard, loveCard, workCard, marriageCard, childrenCard];
+  const list = [yearCard(1), yearCard(0), monthCard, moneyCard, loveCard, workCard, marriageCard, childrenCard];
+  enrichCouple(c, byId(list), {
+    nameA: A.n,
+    nameB: B.n,
+    gods: { year: [dA[0].god, dB[0].god], nextYear: [dA[1].god, dB[1].god], month: [ma.god, mb.god] },
+    moneyTypes: [tA, tB],
+  });
+  return list;
 }

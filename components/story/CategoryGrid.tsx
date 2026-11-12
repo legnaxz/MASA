@@ -27,7 +27,7 @@ export default function CategoryGrid({
                   {s.title}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
-                  {s.tagline} · {s.pages.length}장
+                  {s.tagline}
                 </p>
               </div>
             </button>
