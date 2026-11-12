@@ -68,6 +68,7 @@ import {
   starInfo,
 } from "./detail";
 import { byId, enrichPersonal } from "./enrich";
+import { deepenPersonal } from "./deepen";
 
 const gzKo = (stem: string, branch: string) => STEM_KO[stem] + BRANCH_KO[branch];
 
@@ -632,6 +633,11 @@ export function buildStories(a: Analysis): Story[] {
   };
 
   const list = [nextYear, year, month, money, love, workStory, marriage, children];
+  deepenPersonal(a, byId(list), {
+    year: { god: d0.god, branchGod: d0.branchGod },
+    nextYear: { god: d1.god, branchGod: d1.branchGod },
+    month: { god: m.god, branchGod: m.branchGod },
+  });
   enrichPersonal(a, byId(list), { yearGod: d0.god, nextYearGod: d1.god, monthGod: m.god, moneyType: mt, childCount: cn });
   return list;
 }

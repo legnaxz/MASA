@@ -21,6 +21,7 @@ import type { InteractionType, MonthDetail, YearDetail } from "../saju/period";
 import { DAY_STEM_DECK, KAEUN_DECK } from "../deck";
 import { EL_COLOR_WORD, EL_MEANING, GOD_PLAIN, elName, eul, eun, iga, ieyo, wa } from "./text";
 import type { Story } from "./types";
+import { GOD_MONTH_FLOW } from "./essays";
 
 /* ---------------- 십성별 분야 풀이 (예시 포함) ---------------- */
 export const GOD_AREA: Record<
@@ -215,6 +216,7 @@ function monthLine(m: MonthDetail, a: Analysis): string {
   void a;
   return [
     `**${m.month}월 · ${m.score}점 (${scoreWord(m.score)})** — ${gzKo(m.stem, m.branch)}월, ${m.god}의 달`,
+    `흐름: ${GOD_MONTH_FLOW[m.god]}`,
     `근거: 기본 60 → ${fmtPoints(m.points)} → 이달 ${m.own}점, 한 해 흐름 30% 반영`,
     `👉 ${GOD_AREA[m.god].monthAction}${extra}`,
   ].join("\n");

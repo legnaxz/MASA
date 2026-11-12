@@ -12,6 +12,7 @@ import { analyze, type Analysis } from "@/lib/saju/engine";
 import { buildStories, coverScene, coverTitle } from "@/lib/story/build";
 import { buildCoupleStory, coupleHeadline } from "@/lib/story/couple";
 import { buildCoupleCards } from "@/lib/story/coupleCards";
+import { deepenGunghap } from "@/lib/story/deepen";
 import type { Story } from "@/lib/story/types";
 
 interface Person {
@@ -43,7 +44,7 @@ export default function Home() {
       partnerStories: buildStories(result.partner.a),
       usStories: buildCoupleCards(compat, result.me.label, result.partner.label),
       compat,
-      couple: buildCoupleStory(compat, result.me.label, result.partner.label),
+      couple: deepenGunghap(buildCoupleStory(compat, result.me.label, result.partner.label)),
     };
   }, [result]);
 
