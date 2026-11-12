@@ -120,14 +120,14 @@ export const GOD_AREA: Record<
 };
 
 /* ---------------- 원국 자리별 의미 ---------------- */
-const POSITION: Record<PillarKey, { name: string; area: string }> = {
+export const POSITION: Record<PillarKey, { name: string; area: string }> = {
   year: { name: "연지", area: "부모·윗사람·사회적 평판" },
   month: { name: "월지", area: "직장·일터·형제와 동료" },
   day: { name: "일지", area: "배우자와 나 자신" },
   hour: { name: "시지", area: "자녀·아랫사람·미래 계획" },
 };
 
-const INTERACTION_NAME: Record<InteractionType, string> = {
+export const INTERACTION_NAME: Record<InteractionType, string> = {
   clash: "충(沖)",
   hap: "합(合)",
   wonjin: "원진(怨嗔)",
@@ -135,7 +135,7 @@ const INTERACTION_NAME: Record<InteractionType, string> = {
   same: "같은 글자",
 };
 
-const INTERACTION_EX: Record<InteractionType, Record<PillarKey, string>> = {
+export const INTERACTION_EX: Record<InteractionType, Record<PillarKey, string>> = {
   clash: {
     year: "윗사람이나 부모님과 관련된 변화가 생기기 쉬워요. 예를 들어 부모님의 이사·건강 문제로 신경 쓸 일이 생기거나, 사회적 평판이 흔들리는 일이 있을 수 있어요.",
     month: "일터와 환경이 크게 흔들려요. 예를 들어 부서 이동, 이직 제안, 회사 구조 조정, 출퇴근 길이 바뀌는 이사 같은 일이에요.",
@@ -168,7 +168,7 @@ const INTERACTION_EX: Record<InteractionType, Record<PillarKey, string>> = {
   },
 };
 
-const STEM_TIE_EX: Record<PillarKey, string> = {
+export const STEM_TIE_EX: Record<PillarKey, string> = {
   year: "사회·윗사람과 인연이 묶여요. 예를 들어 새 조직에 소속되거나 후원을 받는 일이에요.",
   month: "일과 관련된 약속에 묶여요. 예를 들어 계약, 입사, 동업처럼 오래 가는 약속이에요.",
   day: "내 마음이 무언가에 단단히 묶여요. 예를 들어 새로운 연인, 결혼, 쉽게 놓을 수 없는 장기 프로젝트예요.",

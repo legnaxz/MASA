@@ -25,7 +25,21 @@ export type Scene =
       mine: { key: string; label: string; stem: string; branch: string; el: Element; mark?: "clash" | "hap" | "wonjin" | "samhap" | "same"; tie?: boolean }[];
     }
   | { kind: "balance"; before: Record<Element, number>; after: Record<Element, number>; yong: Element }
-  | { kind: "months"; items: { month: number; score: number; kind: FlowKind }[]; best: number };
+  | { kind: "months"; items: { month: number; score: number; kind: FlowKind }[]; best: number }
+  | { kind: "boat"; mood: FlowKind }
+  | { kind: "dodont"; mode: "do" | "dont"; icons: string[] }
+  | { kind: "market" }
+  | { kind: "chest"; fill: number }
+  | { kind: "desk"; el: Element }
+  | { kind: "stairs"; step: number }
+  | { kind: "bench" }
+  | { kind: "family"; kids: number }
+  | { kind: "nest"; eggs: number }
+  | { kind: "table" }
+  | { kind: "compass"; el: Element; direction: string }
+  | { kind: "duoScore"; a: number; b: number; labelA: string; labelB: string; heart?: boolean }
+  | { kind: "duoMonths"; items: { month: number; a: number; b: number }[] }
+  | { kind: "seasons"; items: { label: string; sub: string; kind: FlowKind; now?: boolean }[] };
 
 export interface StoryPage {
   title: string;

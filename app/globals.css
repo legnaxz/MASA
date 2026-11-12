@@ -173,6 +173,12 @@ body {
 @keyframes hop { 50% { transform: translateY(-14px); } }
 @keyframes blink { 0%, 92%, 100% { transform: scaleY(0); } 95% { transform: scaleY(1); } }
 @keyframes wing { to { transform: rotate(-14deg); } }
+.anim-rock { animation: rock 2.2s ease-in-out infinite; transform-box: view-box; }
+.anim-needle { animation: needle 1.6s cubic-bezier(0.3, 1.4, 0.5, 1) both; transform-box: view-box; }
+.anim-dial { animation: dial 1.2s ease-out both; }
+@keyframes rock { 0%, 100% { transform: rotate(-5deg) translateY(2px); } 50% { transform: rotate(5deg) translateY(-3px); } }
+@keyframes needle { from { transform: rotate(-140deg); } to { transform: rotate(var(--needle)); } }
+@keyframes dial { from { stroke-dasharray: 0 var(--dial); } }
 .anim-pass-right { animation: pass-right 2.7s ease-in-out infinite; }
 .anim-pass-left { animation: pass-left 2.7s ease-in-out infinite; }
 .anim-walk-right { animation: walk-right 3s ease-out both; }

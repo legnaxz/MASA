@@ -11,6 +11,7 @@ import { compare } from "@/lib/saju/compat";
 import { analyze, type Analysis } from "@/lib/saju/engine";
 import { buildStories, coverScene, coverTitle } from "@/lib/story/build";
 import { buildCoupleStory, coupleHeadline } from "@/lib/story/couple";
+import { buildCoupleCards } from "@/lib/story/coupleCards";
 import type { Story } from "@/lib/story/types";
 
 interface Person {
@@ -26,7 +27,7 @@ interface Result {
 export default function Home() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [who, setWho] = useState<"me" | "partner">("me");
+  const [who, setWho] = useState<"us" | "me" | "partner">("us");
   const [book, setBook] = useState<{ story: Story; key: string } | null>(null);
   const [read, setRead] = useState<Set<string>>(new Set());
   const [drawId, setDrawId] = useState(0);
@@ -35,11 +36,12 @@ export default function Home() {
   const view = useMemo(() => {
     if (!result) return null;
     const meStories = buildStories(result.me.a);
-    if (!result.partner) return { meStories, partnerStories: null, couple: null, compat: null };
+    if (!result.partner) return { meStories, partnerStories: null, usStories: null, couple: null, compat: null };
     const compat = compare(result.me.a, result.partner.a);
     return {
       meStories,
       partnerStories: buildStories(result.partner.a),
+      usStories: buildCoupleCards(compat, result.me.label, result.partner.label),
       compat,
       couple: buildCoupleStory(compat, result.me.label, result.partner.label),
     };
@@ -50,7 +52,7 @@ export default function Home() {
       const me: Person = { label: r.me.name || "나", a: analyze(r.me.birth) };
       const partner: Person | null = r.partner ? { label: r.partner.name || "상대", a: analyze(r.partner.birth) } : null;
       setResult({ me, partner });
-      setWho("me");
+      setWho(partner ? "us" : "me");
       setRead(new Set());
       setError(null);
       setDrawId((n) => n + 1);
@@ -61,7 +63,7 @@ export default function Home() {
     }
   };
 
-  const personal = view && (who === "partner" && view.partnerStories ? view.partnerStories : view.meStories);
+  const personal = view && (who === "us" && view.usStories ? view.usStories : who === "partner" && view.partnerStories ? view.partnerStories : view.meStories);
   const openPersonal = (s: Story) => setBook({ story: s, key: `${who}:${s.id}` });
   const openCouple = () => view?.couple && setBook({ story: view.couple, key: "couple" });
   const readOfWho = new Set([...read].filter((k) => k.startsWith(`${who}:`)).map((k) => k.slice(who.length + 1)));
@@ -122,11 +124,12 @@ export default function Home() {
           {/* 각자의 이야기 */}
           <section>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-serif-kr text-lg font-bold">{result.partner ? "각자의 이야기" : "어떤 이야기를 들려드릴까요?"}</h2>
+              <h2 className="font-serif-kr text-lg font-bold">{!result.partner ? "어떤 이야기를 들려드릴까요?" : who === "us" ? "부부 관점으로 보는 이야기" : "각자의 이야기"}</h2>
               {result.partner && (
                 <div className="inline-flex rounded-xl border border-[var(--line)] p-1 text-sm">
                   {(
                     [
+                      ["us", "💞 우리"],
                       ["me", result.me.label],
                       ["partner", result.partner.label],
                     ] as const

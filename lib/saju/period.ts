@@ -67,14 +67,8 @@ export interface YearDetail extends PeriodFlow {
 
 const clamp = (n: number) => Math.max(20, Math.min(98, Math.round(n)));
 
-export function yearDetail(a: Analysis, year: number): YearDetail {
-  const gz: string = Lunar.fromYmd(year, 6, 1).getYearInGanZhi();
-  const stem = gz[0];
-  const branch = gz[1];
-  const base = scorePeriod(a, stem, branch);
-
-  const hidden = HIDDEN_STEMS[branch].map((s) => ({ stem: s, god: tenGod(a.dayStem, s) }));
-
+/** 들어오는 간지가 원국 네 기둥과 맺는 관계 (지지: 충·합·원진·삼합·같은 글자 / 천간: 합) */
+export function interactionsOf(a: Analysis, stem: string, branch: string) {
   const interactions: Interaction[] = [];
   const stemTies: StemTie[] = [];
   for (const p of a.pillars) {
@@ -93,6 +87,18 @@ export function yearDetail(a: Analysis, year: number): YearDetail {
     const tie = stemHap(stem, p.stem);
     if (tie) stemTies.push({ pos: p.key, myStem: p.stem, el: tie });
   }
+  return { interactions, stemTies };
+}
+
+export function yearDetail(a: Analysis, year: number): YearDetail {
+  const gz: string = Lunar.fromYmd(year, 6, 1).getYearInGanZhi();
+  const stem = gz[0];
+  const branch = gz[1];
+  const base = scorePeriod(a, stem, branch);
+
+  const hidden = HIDDEN_STEMS[branch].map((s) => ({ stem: s, god: tenGod(a.dayStem, s) }));
+
+  const { interactions, stemTies } = interactionsOf(a, stem, branch);
 
   const added = [STEM_EL[stem], BRANCH_EL[branch]];
   const elementAfter = { ...a.elementCounts };

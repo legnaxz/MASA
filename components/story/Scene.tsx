@@ -858,6 +858,419 @@ function MonthsScene({ items, best }: Extract<SceneSpec, { kind: "months" }>) {
   );
 }
 
+/* ---------------- 추가 장면 ---------------- */
+
+function BoatScene({ mood }: { mood: FlowKind }) {
+  return (
+    <>
+      <Sky el={mood === "careful" ? "metal" : "water"} id={`boat-${mood}`} />
+      {mood === "chance" && (
+        <g className="anim-glow">
+          <circle cx="320" cy="56" r="26" fill="#ffe08a" />
+        </g>
+      )}
+      {mood !== "chance" && <Cloud y={30} delay={-4} />}
+      {mood === "careful" && (
+        <g fill="#aab4c4">
+          <ellipse cx="110" cy="48" rx="80" ry="22" />
+          <ellipse cx="300" cy="40" rx="90" ry="24" />
+        </g>
+      )}
+      <path d="M0 150 Q100 135 200 150 T400 150 V250 H0Z" fill="#5b8fd9" />
+      <path d="M0 185 Q100 170 200 185 T400 185 V250 H0Z" fill="#3f6fbd" />
+      {[0, 1, 2].map((i) => (
+        <path key={i} d={`M0 ${165 + i * 24} q25 -7 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0`} stroke="#cfe0fb" strokeWidth="2" fill="none" className="anim-wave" style={{ animationDelay: `${i * 0.5}s` }} />
+      ))}
+      <g className={mood === "careful" ? "anim-rock" : "anim-float"} style={{ transformOrigin: "200px 170px" }}>
+        <path d="M130 160 H270 L250 190 H150Z" fill="#8a5a36" />
+        <line x1="200" y1="160" x2="200" y2="70" stroke="#5a3a22" strokeWidth="4" />
+        <path d={mood === "chance" ? "M204 74 Q268 110 204 150Z" : mood === "prepare" ? "M204 74 Q240 110 204 150Z" : "M204 74 L214 112 L204 150Z"} fill="#fbf3e3" stroke="#d4513f" strokeWidth="2" />
+        <Person x={170} y={160} color="#3767b0" s={0.7} />
+        <Person x={232} y={160} color="#d4513f" s={0.7} hair="#5a3624" flip />
+      </g>
+    </>
+  );
+}
+
+function DoDontScene({ mode, icons }: { mode: "do" | "dont"; icons: string[] }) {
+  const ok = mode === "do";
+  const c = ok ? "#3f9a63" : "#d4513f";
+  const list = icons.slice(0, 4);
+  const step = W / (list.length + 1);
+  return (
+    <>
+      <Sky el={ok ? "wood" : "fire"} id={`dd-${mode}`} />
+      <Hills el={ok ? "wood" : "earth"} />
+      <rect x="194" y="150" width="12" height="90" fill="#7a4b2e" />
+      <rect x="40" y="46" width="320" height="112" rx="14" fill="#fbf3e3" stroke={c} strokeWidth="5" />
+      {list.map((ic, i) => {
+        const x = step * (i + 1) * 0.8 + 40;
+        return (
+          <g key={i} className="anim-pop" style={{ animationDelay: `${0.15 + i * 0.15}s`, transformOrigin: `${x}px 100px` }}>
+            <circle cx={x} cy={100} r="30" fill={light(c, 0.8)} stroke={c} strokeWidth="3" />
+            <text x={x} y={111} textAnchor="middle" fontSize="30">
+              {ic}
+            </text>
+            {!ok && <line x1={x - 21} y1={121} x2={x + 21} y2={79} stroke={c} strokeWidth="5" strokeLinecap="round" />}
+          </g>
+        );
+      })}
+      <g className="anim-float">
+        <circle cx="200" cy="40" r="20" fill={c} stroke="#fff" strokeWidth="3" />
+        <text x="200" y="48" textAnchor="middle" fontSize="22" fontWeight={700} fill="#fff">
+          {ok ? "✓" : "✕"}
+        </text>
+      </g>
+    </>
+  );
+}
+
+function MarketScene() {
+  return (
+    <>
+      <Sky el="earth" id="market" />
+      <Cloud y={28} delay={-5} />
+      <Hills el="earth" />
+      <rect x="110" y="120" width="180" height="100" fill="#e9d8b8" />
+      <rect x="110" y="170" width="180" height="50" fill="#a8693f" />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <path key={i} d={`M${100 + i * 34} 86 h34 l-6 36 h-34z`} fill={i % 2 ? "#fbf3e3" : "#d4513f"} />
+      ))}
+      <rect x="96" y="80" width="208" height="8" rx="3" fill="#7a4b2e" />
+      {[140, 175, 210, 245].map((x, i) => (
+        <text key={x} x={x} y={166} fontSize="24" className="anim-float" style={{ animationDelay: `${i * 0.4}s` }}>
+          {["🍎", "🏺", "🧵", "📦"][i]}
+        </text>
+      ))}
+      <Person x={200} y={150} color="#3f9a63" s={0.7} />
+      {[0, 1, 2].map((i) => (
+        <Coin key={i} x={300 + i * 4} y={200} className="anim-rise" delay={i * 1.1} />
+      ))}
+      <Person x={330} y={236} color="#3767b0" s={0.8} flip />
+    </>
+  );
+}
+
+function ChestScene({ fill }: { fill: number }) {
+  const n = Math.max(2, Math.round(fill * 7));
+  return (
+    <>
+      <Sky el="earth" night id="chest" />
+      <Stars n={10} />
+      <Hills el="earth" night />
+      <g className="anim-glow">
+        <ellipse cx="200" cy="150" rx="90" ry="50" fill="#ffd36b" opacity="0.35" />
+      </g>
+      <path d="M130 150 Q200 86 270 150Z" fill="#8a5530" stroke="#f2c14e" strokeWidth="3" className="anim-sway" style={{ transformOrigin: "200px 150px" }} />
+      {Array.from({ length: n }, (_, i) => (
+        <Coin key={i} x={150 + ((i * 23) % 100)} y={150 - (i % 3) * 6} className="anim-twinkle" delay={i * 0.3} />
+      ))}
+      <rect x="130" y="150" width="140" height="64" rx="6" fill="#a8693f" stroke="#f2c14e" strokeWidth="3" />
+      <rect x="190" y="166" width="20" height="24" rx="4" fill="#f2c14e" />
+      <circle cx="200" cy="176" r="4" fill="#6b4b2a" />
+    </>
+  );
+}
+
+function DeskScene({ el }: { el: Element }) {
+  const c = ELEMENT_INFO[el].color;
+  return (
+    <>
+      <Sky el={el} night id="desk" />
+      <Stars n={8} />
+      <rect x="250" y="40" width="90" height="70" rx="4" fill="#1b2a4a" stroke="#e9d8b8" strokeWidth="4" />
+      <circle cx="318" cy="62" r="10" fill="#fff3c4" className="anim-glow" />
+      <rect x="60" y="170" width="280" height="12" rx="3" fill="#8a5a36" />
+      <rect x="80" y="182" width="12" height="68" fill="#6b4129" />
+      <rect x="308" y="182" width="12" height="68" fill="#6b4129" />
+      <path d="M110 170 V120 Q110 100 135 96" stroke="#3b2a22" strokeWidth="5" fill="none" />
+      <path d="M128 88 L160 96 L150 118 L118 108Z" fill={c} />
+      <path d="M124 112 L190 170 H100Z" fill="#ffe08a" opacity="0.35" className="anim-glow" />
+      {[0, 1, 2].map((i) => (
+        <rect key={i} x={250 + i * 4} y={150 - i * 10} width="60" height="10" rx="2" fill={[c, "#e9d8b8", dark(c, 0.3)][i]} />
+      ))}
+      <rect x="150" y="150" width="60" height="20" rx="2" fill="#fbf3e3" transform="rotate(-4 180 160)" />
+      <Person x={200} y={172} color={c} s={0.9} />
+      <text x="232" y="128" fontSize="18" className="anim-rise">
+        💡
+      </text>
+    </>
+  );
+}
+
+function StairsScene({ step }: { step: number }) {
+  const s = Math.max(0, Math.min(4, step));
+  return (
+    <>
+      <Sky el="metal" id="stairs" />
+      <Cloud y={30} delay={-6} />
+      <g className="anim-glow">
+        <circle cx="330" cy="50" r="22" fill="#ffe08a" />
+      </g>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <rect key={i} x={60 + i * 60} y={210 - i * 32} width="60" height={40 + i * 32} fill={i <= s ? "#c99a2e" : "#a9b1bd"} stroke="#fff" strokeWidth="2" />
+      ))}
+      <g className="anim-float">
+        <line x1="330" y1="82" x2="330" y2="44" stroke="#6b4129" strokeWidth="3" />
+        <path d="M330 44 l26 9 l-26 9z" fill="#d4513f" />
+      </g>
+      <g className="anim-bob">
+        <Person x={90 + s * 60} y={210 - s * 32} color="#3767b0" s={0.8} />
+      </g>
+    </>
+  );
+}
+
+function BenchScene() {
+  return (
+    <>
+      <Sky el="water" night id="bench" />
+      <Stars n={20} />
+      <g className="anim-glow">
+        <circle cx="300" cy="60" r="30" fill="#fff3c4" />
+      </g>
+      <Hills el="wood" night />
+      <path d="M70 230 V120 M70 150 Q40 130 50 100 M70 140 Q100 120 96 90" stroke="#3b2a22" strokeWidth="7" fill="none" strokeLinecap="round" />
+      <circle cx="56" cy="92" r="26" fill="#2f5f47" />
+      <circle cx="96" cy="84" r="24" fill="#3a7354" />
+      <rect x="140" y="196" width="130" height="8" rx="3" fill="#8a5a36" />
+      <rect x="140" y="170" width="130" height="6" rx="3" fill="#8a5a36" />
+      <rect x="150" y="204" width="8" height="26" fill="#6b4129" />
+      <rect x="252" y="204" width="8" height="26" fill="#6b4129" />
+      <Person x={185} y={198} color="#3767b0" s={0.8} />
+      <Person x={225} y={198} color="#d4513f" s={0.8} hair="#5a3624" flip />
+      {[0, 1].map((i) => (
+        <Heart key={i} x={200 + i * 10} y={140} s={0.9} className="anim-rise" delay={i * 1.6} />
+      ))}
+      {Array.from({ length: 5 }, (_, i) => (
+        <circle key={i} cx={120 + i * 55} cy={150 + (i % 2) * 24} r="2.2" fill="#fff07a" className="anim-firefly" style={{ animationDelay: `${i * 0.7}s` }} />
+      ))}
+    </>
+  );
+}
+
+function FamilyScene({ kids }: { kids: number }) {
+  const n = Math.max(1, Math.min(3, kids));
+  return (
+    <>
+      <Sky el="wood" id="family" />
+      <g className="anim-glow">
+        <circle cx="70" cy="56" r="24" fill="#ffe08a" />
+      </g>
+      <Cloud y={36} delay={-8} />
+      <Hills el="wood" />
+      <g className="anim-float">
+        <path d="M300 50 l18 22 l-18 22 l-18 -22z" fill="#d4513f" stroke="#fff" strokeWidth="2" />
+        <path d="M300 94 q-8 14 4 26 q-10 10 0 22" stroke="#f2c14e" strokeWidth="2" fill="none" />
+      </g>
+      <path d="M300 94 Q260 160 232 196" stroke="#fff" strokeWidth="1.2" fill="none" />
+      <Person x={130} y={236} color="#3767b0" s={0.95} />
+      <Person x={290} y={236} color="#d4513f" s={0.95} hair="#5a3624" flip />
+      {Array.from({ length: n }, (_, i) => (
+        <g key={i} className="anim-bob" style={{ animationDelay: `${i * 0.3}s` }}>
+          <Person x={210 + (i - (n - 1) / 2) * 38} y={238} color={["#f2c14e", "#3f9a63", "#8e5bb5"][i]} s={0.6} />
+        </g>
+      ))}
+    </>
+  );
+}
+
+function NestScene({ eggs }: { eggs: number }) {
+  const n = Math.max(0, Math.min(4, eggs));
+  return (
+    <>
+      <Sky el="wood" id="nest" />
+      <Cloud y={30} delay={-3} />
+      <path d="M0 150 Q120 130 260 160 T400 150" stroke="#6b4129" strokeWidth="14" fill="none" strokeLinecap="round" />
+      {[40, 110, 330, 370].map((x, i) => (
+        <ellipse key={x} cx={x} cy={136 + (i % 2) * 20} rx="20" ry="9" fill="#4fae72" transform={`rotate(${i % 2 ? 20 : -20} ${x} 140)`} className="anim-sway" style={{ transformOrigin: `${x}px 150px` }} />
+      ))}
+      <path d="M150 150 Q200 200 250 150Z" fill="#a8793f" />
+      <path d="M150 150 Q200 168 250 150" stroke="#7a552a" strokeWidth="4" fill="none" />
+      {n === 0 ? (
+        <text x="200" y="146" textAnchor="middle" fontSize="20" className="anim-twinkle">
+          ✨
+        </text>
+      ) : (
+        Array.from({ length: n }, (_, i) => (
+          <ellipse key={i} cx={200 + (i - (n - 1) / 2) * 22} cy={144} rx="10" ry="13" fill="#fbf3e3" stroke="#e3d7c1" className="anim-bob" style={{ animationDelay: `${i * 0.4}s` }} />
+        ))
+      )}
+      <g className="anim-butterfly">
+        <text x="90" y="90" fontSize="26">
+          🐦
+        </text>
+      </g>
+    </>
+  );
+}
+
+function TableScene() {
+  return (
+    <>
+      <Sky el="earth" id="table" />
+      <rect x="0" y="0" width={W} height={H} fill="#f3e3c8" opacity="0.6" />
+      <rect x="150" y="30" width="100" height="70" rx="4" fill="#cfe0fb" stroke="#8a5a36" strokeWidth="5" />
+      <line x1="200" y1="30" x2="200" y2="100" stroke="#8a5a36" strokeWidth="3" />
+      <circle cx="226" cy="54" r="10" fill="#ffe08a" className="anim-glow" />
+      <rect x="0" y="210" width={W} height="40" fill="#b98b5a" />
+      <Person x={110} y={196} color="#3767b0" s={0.95} />
+      <Person x={290} y={196} color="#d4513f" s={0.95} hair="#5a3624" flip />
+      <rect x="110" y="170" width="180" height="10" rx="4" fill="#8a5a36" />
+      <rect x="130" y="180" width="10" height="46" fill="#6b4129" />
+      <rect x="260" y="180" width="10" height="46" fill="#6b4129" />
+      {[165, 200, 235].map((x, i) => (
+        <g key={x}>
+          <ellipse cx={x} cy={166} rx="14" ry="5" fill="#fbf3e3" stroke="#c9b28c" />
+          <path d={`M${x} 156 q5 -8 0 -16 q-5 -8 0 -16`} stroke="#fff" strokeWidth="3" fill="none" opacity="0.8" className="anim-rise" style={{ animationDelay: `${i * 0.8}s` }} />
+        </g>
+      ))}
+      <Heart x={200} y={130} s={1.1} className="anim-float" />
+    </>
+  );
+}
+
+function CompassScene({ el, direction }: { el: Element; direction: string }) {
+  const c = ELEMENT_INFO[el].color;
+  const angle = { 동쪽: 90, 서쪽: 270, 남쪽: 180, 북쪽: 0, 중앙: 0 }[direction] ?? 0;
+  return (
+    <>
+      <Sky el={el} id="compass" />
+      <Hills el={el} />
+      <circle cx="200" cy="120" r="84" fill="#fbf3e3" stroke="#6b4b2a" strokeWidth="6" />
+      <circle cx="200" cy="120" r="70" fill="none" stroke={c} strokeWidth="2" strokeDasharray="3 6" />
+      {[["北", 200, 62], ["東", 262, 127], ["南", 200, 190], ["西", 138, 127]].map(([t, x, y]) => (
+        <Glyph key={t as string} x={x as number} y={y as number} text={t as string} size={18} fill="#6b4b2a" />
+      ))}
+      {direction === "중앙" ? (
+        <circle cx="200" cy="120" r="22" fill={c} className="anim-glow" />
+      ) : (
+        <g className="anim-needle" style={{ transformOrigin: "200px 120px", ["--needle" as string]: `${angle}deg` }}>
+          <path d="M200 66 L210 120 L190 120Z" fill={c} />
+          <path d="M200 174 L210 120 L190 120Z" fill="#b9b0a0" />
+        </g>
+      )}
+      <circle cx="200" cy="120" r="7" fill="#6b4b2a" />
+    </>
+  );
+}
+
+function Dial({ x, score, label }: { x: number; score: number; label: string }) {
+  const kind: FlowKind = score >= 68 ? "chance" : score >= 52 ? "prepare" : "careful";
+  const r = 52;
+  const circ = Math.PI * r;
+  return (
+    <g>
+      <path d={`M${x - r} 160 A${r} ${r} 0 0 1 ${x + r} 160`} stroke="#ffffff" strokeOpacity="0.55" strokeWidth="14" fill="none" strokeLinecap="round" />
+      <path
+        d={`M${x - r} 160 A${r} ${r} 0 0 1 ${x + r} 160`}
+        stroke={KIND_FILL[kind]}
+        strokeWidth="14"
+        fill="none"
+        strokeLinecap="round"
+        strokeDasharray={`${(circ * score) / 100} ${circ}`}
+        className="anim-dial"
+        style={{ ["--dial" as string]: `${circ}` }}
+      />
+      <text x={x} y={154} textAnchor="middle" fontSize="30" fontWeight={700} fill="#2b241b">
+        {score}
+      </text>
+      <text x={x} y={188} textAnchor="middle" fontSize="14" fontWeight={700} fill="#2b241b">
+        {label}
+      </text>
+    </g>
+  );
+}
+
+function DuoScoreScene({ a, b, labelA, labelB, heart = true }: { a: number; b: number; labelA: string; labelB: string; heart?: boolean }) {
+  return (
+    <>
+      <Sky el="earth" id="duoscore" />
+      <Cloud y={24} delay={-5} />
+      <Hills el="wood" />
+      <rect x="30" y="80" width="340" height="124" rx="16" fill="#fbf3e3" opacity="0.92" />
+      <Dial x={115} score={a} label={labelA} />
+      <Dial x={285} score={b} label={labelB} />
+      {heart ? <Heart x={200} y={150} s={1.6} className="anim-float" /> : <text x="200" y="152" textAnchor="middle" fontSize="22">→</text>}
+    </>
+  );
+}
+
+function DuoMonthsScene({ items }: { items: { month: number; a: number; b: number }[] }) {
+  const step = (W - 40) / items.length;
+  return (
+    <>
+      <Sky el="water" id="duomonths" />
+      {[40, 60, 80].map((v) => (
+        <g key={v}>
+          <line x1="24" x2="384" y1={214 - v * 1.7} y2={214 - v * 1.7} stroke="#fff" strokeOpacity="0.5" strokeDasharray="3 4" />
+          <text x="22" y={218 - v * 1.7} fontSize="9" fill="#2b241b" opacity="0.6" textAnchor="end">
+            {v}
+          </text>
+        </g>
+      ))}
+      {items.map((m, i) => {
+        const x = 30 + step * i + step / 2;
+        const bw = Math.min(11, step * 0.36);
+        const both = m.a >= 68 && m.b >= 68;
+        return (
+          <g key={m.month}>
+            <rect x={x - bw - 1} y={214 - m.a * 1.7} width={bw} height={m.a * 1.7} rx="3" fill="#3767b0" className="anim-grow" style={{ transformOrigin: `${x}px 214px`, animationDelay: `${i * 0.05}s` }} />
+            <rect x={x + 1} y={214 - m.b * 1.7} width={bw} height={m.b * 1.7} rx="3" fill="#d4513f" className="anim-grow" style={{ transformOrigin: `${x}px 214px`, animationDelay: `${i * 0.05 + 0.05}s` }} />
+            {both && (
+              <text x={x} y={204 - Math.max(m.a, m.b) * 1.7} textAnchor="middle" fontSize="12" className="anim-twinkle">
+                ⭐
+              </text>
+            )}
+            <text x={x} y={230} textAnchor="middle" fontSize="11" fontWeight={700} fill="#2b241b">
+              {m.month}
+            </text>
+          </g>
+        );
+      })}
+      <rect x="150" y="10" width="10" height="10" rx="2" fill="#3767b0" />
+      <rect x="210" y="10" width="10" height="10" rx="2" fill="#d4513f" />
+    </>
+  );
+}
+
+function SeasonsScene({ items }: { items: { label: string; sub: string; kind: FlowKind; now?: boolean }[] }) {
+  const step = W / (items.length + 1);
+  return (
+    <>
+      <Sky el="wood" id="seasons" />
+      <Cloud y={20} delay={-6} />
+      <path d="M0 200 Q200 180 400 200 V250 H0Z" fill="#6cae7d" />
+      <path d="M0 214 Q200 198 400 214" stroke="#f1e2c2" strokeWidth="12" fill="none" />
+      {items.map((it, i) => {
+        const x = step * (i + 1);
+        const h = it.kind === "chance" ? 70 : it.kind === "prepare" ? 50 : 32;
+        const leaf = it.kind === "chance" ? "#3f9a63" : it.kind === "prepare" ? "#c99a2e" : "#9aa3b0";
+        return (
+          <g key={it.label}>
+            <g className="anim-grow" style={{ transformOrigin: `${x}px 204px`, animationDelay: `${i * 0.12}s` }}>
+              <rect x={x - 3} y={204 - h} width="6" height={h} fill="#7a4b2e" />
+              <circle cx={x} cy={204 - h} r={h * 0.36} fill={leaf} />
+              <circle cx={x - h * 0.24} cy={204 - h * 0.78} r={h * 0.24} fill={light(leaf, 0.15)} />
+            </g>
+            {it.now && (
+              <text x={x} y={204 - h - h * 0.4 - 6} textAnchor="middle" fontSize="15" className="anim-bob">
+                📍
+              </text>
+            )}
+            <text x={x} y={232} textAnchor="middle" fontSize="11" fontWeight={700} fill="#2b241b">
+              {it.label}
+            </text>
+            <text x={x} y={245} textAnchor="middle" fontSize="10" fill="#2b241b">
+              {it.sub}
+            </text>
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
 export default memo(SceneView);
 
 function SceneView({ scene, className }: { scene: SceneSpec; className?: string }) {
@@ -919,6 +1332,48 @@ function SceneView({ scene, className }: { scene: SceneSpec; className?: string 
       break;
     case "months":
       body = <MonthsScene {...scene} />;
+      break;
+    case "boat":
+      body = <BoatScene mood={scene.mood} />;
+      break;
+    case "dodont":
+      body = <DoDontScene mode={scene.mode} icons={scene.icons} />;
+      break;
+    case "market":
+      body = <MarketScene />;
+      break;
+    case "chest":
+      body = <ChestScene fill={scene.fill} />;
+      break;
+    case "desk":
+      body = <DeskScene el={scene.el} />;
+      break;
+    case "stairs":
+      body = <StairsScene step={scene.step} />;
+      break;
+    case "bench":
+      body = <BenchScene />;
+      break;
+    case "family":
+      body = <FamilyScene kids={scene.kids} />;
+      break;
+    case "nest":
+      body = <NestScene eggs={scene.eggs} />;
+      break;
+    case "table":
+      body = <TableScene />;
+      break;
+    case "compass":
+      body = <CompassScene el={scene.el} direction={scene.direction} />;
+      break;
+    case "duoScore":
+      body = <DuoScoreScene {...scene} />;
+      break;
+    case "duoMonths":
+      body = <DuoMonthsScene items={scene.items} />;
+      break;
+    case "seasons":
+      body = <SeasonsScene items={scene.items} />;
       break;
   }
   return (
