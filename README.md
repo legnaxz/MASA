@@ -4,7 +4,7 @@
 
 MASA는 태어난 날짜와 시간을 입력하면 **사주팔자(四柱八字)** 를 계산하고, 오행 분포와 일간(日干)을 바탕으로 성향·운세 풀이를 보여주는 웹 앱입니다. 별도 설치 없이 브라우저에서 바로 사용할 수 있으며, [Vercel](https://vercel.com)에 배포됩니다.
 
-🌐 **Live Demo:** https://masa.vercel.app <!-- 배포 후 실제 주소로 변경 -->
+🌐 **Live Demo:** https://masa-hazel.vercel.app
 
 ---
 
