@@ -51,7 +51,7 @@ export interface StoryPage {
 }
 
 export interface Story {
-  id: "couple" | "year" | "nextYear" | "month" | "money" | "love" | "marriage" | "children" | "work";
+  id: "couple" | "year" | "nextYear" | "month" | "money" | "love" | "marriage" | "children" | "work" | "place" | "ask" | "fight" | "family";
   title: string;
   icon: string;
   tagline: string;

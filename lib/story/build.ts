@@ -69,6 +69,7 @@ import {
 } from "./detail";
 import { byId, enrichPersonal } from "./enrich";
 import { deepenPersonal } from "./deepen";
+import { buildPlaceStory, jobExtraPages } from "./place";
 
 const gzKo = (stem: string, branch: string) => STEM_KO[stem] + BRANCH_KO[branch];
 
@@ -639,6 +640,9 @@ export function buildStories(a: Analysis): Story[] {
     month: { god: m.god, branchGod: m.branchGod },
   });
   enrichPersonal(a, byId(list), { yearGod: d0.god, nextYearGod: d1.god, monthGod: m.god, moneyType: mt, childCount: cn });
+  // 직업운 보강 (마무리 조언 앞에), 살기 좋은 곳 카드 (부부운 앞에)
+  workStory.pages.splice(workStory.pages.length - 1, 0, ...jobExtraPages(a));
+  list.splice(6, 0, buildPlaceStory(a, new Date()));
   return list;
 }
 

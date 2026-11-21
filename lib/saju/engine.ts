@@ -206,6 +206,8 @@ export interface Analysis {
   dominantGroup: TenGodGroup;
   strength: { strong: boolean; ratio: number; gauge: number };
   yongshin: Element;
+  /** 보정 전 계산으로 구한 용신 */
+  calcYongshin: Element;
   heeshin: Element;
   gishin: Element;
   shinsal: Shinsal[];
@@ -324,7 +326,12 @@ function findShinsal(pillars: Pillar[], dayStem: string): Shinsal[] {
   return result;
 }
 
-export function analyze(input: BirthInput, now = new Date()): Analysis {
+export interface AnalyzeOptions {
+  /** 지난 일로 보정한 용신 (없으면 계산값) */
+  yongshin?: Element;
+}
+
+export function analyze(input: BirthInput, now = new Date(), opts: AnalyzeOptions = {}): Analysis {
   const f = toSolarFields(input);
   const solar = Solar.fromYmdHms(f.y, f.m, f.d, f.h, f.mi, 0);
   const lunar = solar.getLunar();
@@ -404,7 +411,8 @@ export function analyze(input: BirthInput, now = new Date()): Analysis {
   const candidates: Element[] = strong
     ? [GENERATES[dayEl], CONTROLS[dayEl], controllerOf(dayEl)]
     : [generatorOf(dayEl), dayEl];
-  const yongshin = candidates.reduce((a, b) => (elementCounts[b] < elementCounts[a] ? b : a));
+  const calcYongshin = candidates.reduce((a, b) => (elementCounts[b] < elementCounts[a] ? b : a));
+  const yongshin = opts.yongshin ?? calcYongshin;
   const heeshin = generatorOf(yongshin);
   const gishin = controllerOf(yongshin);
 
@@ -477,6 +485,7 @@ export function analyze(input: BirthInput, now = new Date()): Analysis {
     dominantGroup,
     strength: { strong, ratio, gauge },
     yongshin,
+    calcYongshin,
     heeshin,
     gishin,
     shinsal,

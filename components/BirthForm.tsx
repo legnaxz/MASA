@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BirthInput } from "@/lib/saju/engine";
+import { blankPerson, dateError, decodeShare, encodeShare, personValid, timeError, toBirth, type Mode, type PersonState } from "@/lib/share";
+import HourFinder from "./tools/HourFinder";
 
 const field =
   "w-full min-w-0 rounded-lg border border-[var(--line)] bg-[var(--card)] px-3 py-2 text-[16px] outline-none focus:border-[var(--ink)]";
 
-export type Mode = "couple" | "solo";
+export type { Mode };
 
 export interface PersonInput {
   name: string;
@@ -17,18 +19,8 @@ export interface FormResult {
   mode: Mode;
   me: PersonInput;
   partner: PersonInput | null;
-}
-
-interface PersonState {
-  name: string;
-  /** 숫자만: YYYYMMDD */
-  date: string;
-  /** 숫자만: HHMM */
-  time: string;
-  timeUnknown: boolean;
-  calendar: "solar" | "lunar";
-  leapMonth: boolean;
-  gender: "male" | "female";
+  /** 링크 만들기와 보정 저장에 쓰는 원래 입력값 */
+  raw: { me: PersonState; partner: PersonState | null; correction: boolean };
 }
 
 interface Saved {
@@ -41,80 +33,105 @@ interface Saved {
 /** 입력값은 이 브라우저(localStorage)에만 저장된다 */
 const STORAGE_KEY = "masa:birth:v1";
 
-const blank = (gender: "male" | "female"): PersonState => ({
-  name: "",
-  date: "",
-  time: "",
-  timeUnknown: false,
-  calendar: "solar",
-  leapMonth: false,
-  gender,
-});
-
 const digits = (s: string, max: number) => s.replace(/\D/g, "").slice(0, max);
 const showDate = (d: string) => [d.slice(0, 4), d.slice(4, 6), d.slice(6, 8)].filter(Boolean).join(".");
 const showTime = (t: string) => [t.slice(0, 2), t.slice(2, 4)].filter(Boolean).join(":");
 
-function dateError(p: PersonState): string | null {
-  if (p.date.length !== 8) return "생년월일 8자리를 입력해 주세요 (예: 19900515)";
-  const y = +p.date.slice(0, 4);
-  const m = +p.date.slice(4, 6);
-  const d = +p.date.slice(6, 8);
-  if (y < 1900 || y > 2099) return "태어난 해는 1900~2099년 사이로 입력해 주세요";
-  if (m < 1 || m > 12) return "월은 01~12 사이로 입력해 주세요";
-  const maxDay = p.calendar === "lunar" ? 30 : new Date(y, m, 0).getDate();
-  if (d < 1 || d > maxDay) return `일은 01~${maxDay} 사이로 입력해 주세요`;
-  return null;
+/** 링크를 공유하거나(모바일) 복사한다 */
+export async function shareLink(url: string, text: string): Promise<"shared" | "copied" | "failed"> {
+  try {
+    if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      await navigator.share({ title: "MASA 사주", text, url });
+      return "shared";
+    }
+    await navigator.clipboard.writeText(url);
+    return "copied";
+  } catch {
+    return "failed";
+  }
 }
-
-function timeError(p: PersonState): string | null {
-  if (p.timeUnknown) return null;
-  if (p.time.length !== 4) return "태어난 시간 4자리를 입력하거나 「시간 모름」을 선택해 주세요 (예: 0930)";
-  if (+p.time.slice(0, 2) > 23 || +p.time.slice(2, 4) > 59) return "시간은 0000~2359 사이로 입력해 주세요";
-  return null;
-}
-
-const toInput = (p: PersonState, correction: boolean): PersonInput => ({
-  name: p.name.trim(),
-  birth: {
-    year: +p.date.slice(0, 4),
-    month: +p.date.slice(4, 6),
-    day: +p.date.slice(6, 8),
-    hour: p.timeUnknown ? null : +p.time.slice(0, 2),
-    minute: p.timeUnknown ? 0 : +p.time.slice(2, 4),
-    calendar: p.calendar,
-    leapMonth: p.calendar === "lunar" && p.leapMonth,
-    gender: p.gender,
-    solarTimeCorrection: correction,
-  },
-});
 
 export default function BirthForm({ onSubmit }: { onSubmit: (r: FormResult) => void }) {
   const [mode, setMode] = useState<Mode>("couple");
-  const [me, setMe] = useState<PersonState>(blank("female"));
-  const [partner, setPartner] = useState<PersonState>(blank("male"));
+  const [me, setMe] = useState<PersonState>(blankPerson("female"));
+  const [partner, setPartner] = useState<PersonState>(blankPerson("male"));
   const [correction, setCorrection] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [hasSaved, setHasSaved] = useState(false);
   const [tried, setTried] = useState(false);
+  /** 초대 링크로 들어온 경우: 초대한 사람의 이름 */
+  const [invitedBy, setInvitedBy] = useState<string | null>(null);
+  const [showInviter, setShowInviter] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const autoSubmit = useRef<FormResult | null>(null);
 
-  // 저장된 입력 불러오기 (첫 렌더 뒤에 읽어 서버 렌더와 어긋나지 않게 한다)
+  const build = (m: Mode, a: PersonState, b: PersonState, c: boolean): FormResult => ({
+    mode: m,
+    me: { name: a.name.trim(), birth: toBirth(a, c) },
+    partner: m === "couple" ? { name: b.name.trim(), birth: toBirth(b, c) } : null,
+    raw: { me: a, partner: m === "couple" ? b : null, correction: c },
+  });
+
+  // 저장된 입력과 링크(#i=초대, #r=결과) 읽기 — 한 번만 (개발 모드는 effect를 두 번 실행한다)
+  const booted = useRef(false);
   useEffect(() => {
+    if (booted.current) return;
+    booted.current = true;
+    let sMe = blankPerson("female");
+    let sPartner = blankPerson("male");
+    let sMode: Mode = "couple";
+    let sCorr = true;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const s = JSON.parse(raw) as Partial<Saved>;
-        if (s.mode === "couple" || s.mode === "solo") setMode(s.mode);
-        if (s.me) setMe({ ...blank("female"), ...s.me });
-        if (s.partner) setPartner({ ...blank("male"), ...s.partner });
-        if (typeof s.correction === "boolean") setCorrection(s.correction);
+        if (s.mode === "couple" || s.mode === "solo") sMode = s.mode;
+        if (s.me) sMe = { ...sMe, ...s.me };
+        if (s.partner) sPartner = { ...sPartner, ...s.partner };
+        if (typeof s.correction === "boolean") sCorr = s.correction;
         setHasSaved(true);
       }
     } catch {
       // 저장소를 못 쓰는 환경이면 빈 폼으로 시작
     }
+
+    const shared = decodeShare(window.location.hash);
+    if (shared) {
+      history.replaceState(null, "", window.location.pathname);
+      if (shared.kind === "invite") {
+        // 초대한 사람은 내 화면에서 "상대"가 된다
+        sMode = "couple";
+        sPartner = shared.me;
+        sCorr = shared.correction;
+        setInvitedBy(shared.me.name || "상대");
+      } else if (shared.partner) {
+        sMode = "couple";
+        sMe = shared.me;
+        sPartner = shared.partner;
+        sCorr = shared.correction;
+        autoSubmit.current = build("couple", sMe, sPartner, sCorr);
+      } else {
+        sMode = "solo";
+        sMe = shared.me;
+        sCorr = shared.correction;
+        autoSubmit.current = build("solo", sMe, sPartner, sCorr);
+      }
+    }
+    setMode(sMode);
+    setMe(sMe);
+    setPartner(sPartner);
+    setCorrection(sCorr);
     setLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 결과 링크로 들어오면 바로 펼친다
+  useEffect(() => {
+    if (loaded && autoSubmit.current) {
+      onSubmit(autoSubmit.current);
+      autoSubmit.current = null;
+    }
+  }, [loaded, onSubmit]);
 
   // 입력이 바뀔 때마다 저장
   useEffect(() => {
@@ -132,8 +149,9 @@ export default function BirthForm({ onSubmit }: { onSubmit: (r: FormResult) => v
   const invalid = people.some((p) => dateError(p) || timeError(p));
 
   const clear = () => {
-    setMe(blank("female"));
-    setPartner(blank("male"));
+    setMe(blankPerson("female"));
+    setPartner(blankPerson("male"));
+    setInvitedBy(null);
     setTried(false);
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -141,6 +159,17 @@ export default function BirthForm({ onSubmit }: { onSubmit: (r: FormResult) => v
       // 무시
     }
     setHasSaved(false);
+  };
+
+  const invite = async () => {
+    if (!personValid(me)) {
+      setTried(true);
+      setNote("내 생년월일과 시간을 먼저 입력해 주세요.");
+      return;
+    }
+    const url = `${window.location.origin}${window.location.pathname}${encodeShare({ kind: "invite", me, correction })}`;
+    const r = await shareLink(url, `${me.name || "제가"} 사주 궁합을 같이 보자고 초대했어요. 생년월일을 입력하면 두 사람의 궁합이 나와요.`);
+    setNote(r === "copied" ? "초대 링크를 복사했어요. 상대에게 붙여 넣어 보내세요." : r === "shared" ? "초대 링크를 보냈어요." : "링크를 복사하지 못했어요. 브라우저에서 복사 권한을 허용해 주세요.");
   };
 
   return (
@@ -151,13 +180,15 @@ export default function BirthForm({ onSubmit }: { onSubmit: (r: FormResult) => v
         e.preventDefault();
         setTried(true);
         if (invalid) return;
-        onSubmit({
-          mode,
-          me: toInput(me, correction),
-          partner: mode === "couple" ? toInput(partner, correction) : null,
-        });
+        onSubmit(build(mode, me, partner, correction));
       }}
     >
+      {invitedBy && (
+        <p className="rounded-xl border border-[var(--accent)] bg-[var(--bg)] px-3 py-2.5 text-[15px] leading-relaxed">
+          💌 <b>{invitedBy}</b>님이 사주 궁합을 같이 보자고 초대했어요. 아래에 <b>내 생년월일</b>만 입력하면 두 사람의 궁합이 펼쳐져요.
+        </p>
+      )}
+
       <div className="grid grid-cols-2 rounded-xl border border-[var(--line)] p-1 text-sm">
         {(
           [
@@ -177,8 +208,21 @@ export default function BirthForm({ onSubmit }: { onSubmit: (r: FormResult) => v
         ))}
       </div>
 
-      <PersonFields title={mode === "couple" ? "나" : undefined} value={me} onChange={setMe} namePlaceholder="이름 (선택)" showErrors={tried} />
-      {mode === "couple" && <PersonFields title="상대" value={partner} onChange={setPartner} namePlaceholder="상대 이름 (선택)" showErrors={tried} />}
+      <PersonFields title={mode === "couple" ? "나" : undefined} value={me} onChange={setMe} namePlaceholder="이름 (선택)" showErrors={tried} correction={correction} />
+
+      {mode === "couple" &&
+        (invitedBy && !showInviter ? (
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--line)] p-3 text-sm">
+            <span>
+              <b className="font-serif-kr">상대</b> · {invitedBy} <span className="text-[var(--muted)]">(초대한 사람의 생년월일은 가려 두었어요)</span>
+            </span>
+            <button type="button" onClick={() => setShowInviter(true)} className="shrink-0 text-[var(--muted)] underline underline-offset-2">
+              보기·고치기
+            </button>
+          </div>
+        ) : (
+          <PersonFields title="상대" value={partner} onChange={setPartner} namePlaceholder="상대 이름 (선택)" showErrors={tried} correction={correction} />
+        ))}
 
       <label className="flex cursor-pointer items-center gap-1.5 text-sm">
         <input type="checkbox" checked={correction} onChange={(e) => setCorrection(e.target.checked)} className="h-4 w-4 accent-[var(--ink)]" />
@@ -188,6 +232,16 @@ export default function BirthForm({ onSubmit }: { onSubmit: (r: FormResult) => v
       <button type="submit" className="draw-btn font-serif-kr rounded-xl py-3 text-lg font-bold">
         {mode === "couple" ? "우리 이야기 펼치기" : "이야기 펼치기"}
       </button>
+
+      {mode === "couple" && !invitedBy && (
+        <div className="grid gap-1.5 rounded-xl border border-dashed border-[var(--line)] p-3">
+          <button type="button" onClick={invite} className="nav-btn rounded-lg py-2 text-sm font-medium">
+            💌 상대의 생년월일을 모른다면 — 초대 링크 보내기
+          </button>
+          <p className="text-xs text-[var(--muted)]">내 정보만 입력하고 링크를 보내면, 상대가 자기 생년월일을 넣어 궁합을 볼 수 있어요. 링크에는 내 생년월일이 담기니 믿을 수 있는 사람에게만 보내세요.</p>
+        </div>
+      )}
+      {note && <p className="text-sm text-[var(--accent)]">{note}</p>}
 
       <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
         <span>입력한 내용은 이 기기의 브라우저에만 저장돼요.</span>
@@ -207,16 +261,20 @@ function PersonFields({
   onChange,
   namePlaceholder,
   showErrors,
+  correction,
 }: {
   title?: string;
   value: PersonState;
   onChange: (v: PersonState) => void;
   namePlaceholder: string;
   showErrors: boolean;
+  correction: boolean;
 }) {
   const set = <K extends keyof PersonState>(k: K, v: PersonState[K]) => onChange({ ...value, [k]: v });
+  const [finder, setFinder] = useState(false);
   const dErr = showErrors ? dateError(value) : null;
   const tErr = showErrors ? timeError(value) : null;
+  const canFind = value.timeUnknown && !dateError(value);
   return (
     <fieldset className="grid gap-3 rounded-xl border border-[var(--line)] p-3">
       {title && <legend className="font-serif-kr px-1.5 text-sm font-bold">{title}</legend>}
@@ -257,6 +315,21 @@ function PersonFields({
         <Check checked={value.timeUnknown} onChange={(v) => set("timeUnknown", v)} label="시간 모름" />
         {value.calendar === "lunar" && <Check checked={value.leapMonth} onChange={(v) => set("leapMonth", v)} label="윤달" />}
       </div>
+      {canFind && !finder && (
+        <button type="button" onClick={() => setFinder(true)} className="nav-btn w-fit rounded-lg px-3 py-1.5 text-sm">
+          🔎 태어난 시간 찾아보기
+        </button>
+      )}
+      {canFind && finder && (
+        <HourFinder
+          birth={toBirth(value, correction)}
+          onClose={() => setFinder(false)}
+          onPick={(hhmm) => {
+            onChange({ ...value, time: hhmm, timeUnknown: false });
+            setFinder(false);
+          }}
+        />
+      )}
     </fieldset>
   );
 }

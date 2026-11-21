@@ -11,6 +11,7 @@ import { moneyType } from "./build";
 import { GROUP_PERSON } from "./detail";
 import { byId, enrichCouple } from "./enrich";
 import { deepenCouple } from "./deepen";
+import { buildCouplePlaceStory } from "./place";
 import { CHILD_STYLE, LOVE_PATTERN, MONEY_STORY, PARENT_TIP, YEAR_MONEY, elName, eul, eun, iga, ieyo, wa } from "./text";
 import { GOD_AREA, INTERACTION_EX, INTERACTION_NAME, scoreWord } from "./yearly";
 import type { Scene, Story, StoryPage } from "./types";
@@ -735,5 +736,6 @@ export function buildCoupleCards(c: Compat, nameA: string, nameB: string): Story
     gods: { year: [dA[0].god, dB[0].god], nextYear: [dA[1].god, dB[1].god], month: [ma.god, mb.god] },
     moneyTypes: [tA, tB],
   });
+  list.splice(6, 0, buildCouplePlaceStory(a, b, A.n, B.n));
   return list;
 }

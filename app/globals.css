@@ -92,6 +92,29 @@ body {
   transform: rotate(45deg);
 }
 
+.tool-btn {
+  background: var(--card);
+  border: 1px solid var(--line);
+  transition: transform 0.15s, border-color 0.15s;
+}
+.tool-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink);
+}
+
+.life-line {
+  stroke-dasharray: 2400;
+  animation: life-draw 2.2s ease-out both;
+}
+@keyframes life-draw {
+  from {
+    stroke-dashoffset: 2400;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 .toc-chip {
   border: 1px solid var(--line);
   color: var(--muted);
